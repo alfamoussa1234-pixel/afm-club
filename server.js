@@ -156,7 +156,7 @@ async function serveStatic(req, res, pathname) {
     const st = await fsp.stat(file);
     if (!st.isFile()) throw new Error();
     const ext = path.extname(file).toLowerCase();
-    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream", "Cache-Control": ext === ".html" ? "no-cache" : "public, max-age=86400", "X-Content-Type-Options": "nosniff" });
+    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream", "Cache-Control": ext === ".html" || ext === ".webmanifest" || path.basename(file) === "sw.js" ? "no-cache" : "public, max-age=86400", "X-Content-Type-Options": "nosniff" });
     fs.createReadStream(file).pipe(res);
   } catch {
     // Application monopage : toute autre adresse renvoie l'index
