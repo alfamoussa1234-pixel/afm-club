@@ -2,9 +2,17 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#13105a">
+<meta name="description" content="Application de gestion du club AFM — Afrique Football Management">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AFM">
 <title>AFM — Gestion du club</title>
-<link rel="icon" href="logo.png">
+<link rel="icon" href="/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -183,6 +191,11 @@ main{padding:22px 32px 60px;min-width:0}
 .lerr{color:var(--red);font-size:13px;min-height:18px}
 .me{cursor:pointer;border-radius:10px;padding:4px 8px}
 .me:hover{background:#eceef6}
+.install-bar{display:none;align-items:center;gap:10px;background:var(--pri);color:#fff;border-radius:12px;padding:10px 12px;margin-bottom:12px}
+.install-bar img{width:34px;height:34px;border-radius:8px}
+.install-bar div{flex:1;font-size:13px;line-height:1.3}
+.install-bar.show{display:flex}
+.steps{margin:0;padding-left:20px}.steps li{margin:6px 0}
 .mob-top{display:none}
 .show-m{display:none}
 @media (max-width:980px){
@@ -197,7 +210,8 @@ main{padding:22px 32px 60px;min-width:0}
   .nav a{flex-direction:column;gap:2px;font-size:10.5px;padding:6px 8px;flex:1 0 auto;min-width:64px;text-align:center;align-items:center}
   .nav a span{white-space:nowrap}
   .nav .badge{position:absolute;top:0;right:6px;font-size:9.5px;padding:0 5px}
-  main{padding:12px 14px 96px}
+  main{padding:calc(12px + env(safe-area-inset-top)) 14px calc(96px + env(safe-area-inset-bottom))}
+  .side{padding-bottom:calc(5px + env(safe-area-inset-bottom))}
   .mob-top{display:flex;align-items:center;gap:10px}
   .mob-top img{width:34px}
   .mob-top b{font-family:"Barlow Condensed";font-size:22px}
@@ -229,6 +243,7 @@ main{padding:22px 32px 60px;min-width:0}
     <label class="flabel">Mot de passe<input class="input" type="password" name="password" autocomplete="current-password" required></label>
     <div id="loginErr" class="lerr"></div>
     <button class="btn" style="width:100%;justify-content:center;padding:11px">Se connecter</button>
+    <button type="button" class="btn ghost" id="loginInstall" style="width:100%;justify-content:center;display:none" onclick="installApp()">📲 Installer l'application</button>
     <p class="muted" style="font-size:12px;margin:14px 0 0">Pas encore de compte ? Demandez vos identifiants à l'administration du club.</p>
   </form>
 </div>
@@ -249,6 +264,7 @@ main{padding:22px 32px 60px;min-width:0}
         <button class="bell" id="bell" title="Notifications" onclick="toggleNotif()"></button>
       </div>
     </div>
+    <div class="install-bar" id="installBar"><img src="/icon-192.png" alt=""><div><b>Installer l'application AFM</b><br>Accès direct depuis l'écran d'accueil</div><button class="btn gold sm" onclick="installApp()">Installer</button><button class="icon-btn" style="color:#fff" onclick="dismissInstall()" title="Plus tard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
     <div id="banner"></div>
     <div id="view"></div>
   </main>
@@ -438,7 +454,7 @@ function renderChrome() {
   $("#nav").innerHTML = routes().map(x => x.sep ? '<div class="sep"></div>' : `<a href="#${x.id}" class="${x.id === r.id ? "on" : ""}">${I[x.icon]}<span>${x.short ? `<span class="hide-m">${x.label}</span><span class="show-m">${x.short}</span>` : x.label}</span>${x.badge && x.badge() ? `<span class="badge">${x.badge()}</span>` : ""}</a>`).join("");
   const nm = S.settings.nom || "AFM"; $("#clubName").textContent = nm; $("#clubNameM").textContent = nm;
   $("#sideFoot").innerHTML = (IS_ADMIN ? `<button class="btn ghost-w sm" onclick="togglePreview()">${I.eye} ${PREVIEW ? "Revenir à l'administration" : "Voir l'espace joueur"}</button>` : "") +
-    `<button class="btn ghost-w sm" onclick="logout()">Se déconnecter</button><div><span class="dot ${MODE === "ok" ? "ok" : MODE === "err" ? "local" : ""}"></span>${esc(SYNC)}</div>`;
+    (isStandalone() ? "" : `<button class="btn gold sm" onclick="installApp()">📲 Installer l'application</button>`) + `<button class="btn ghost-w sm" onclick="logout()">Se déconnecter</button><div><span class="dot ${MODE === "ok" ? "ok" : MODE === "err" ? "local" : ""}"></span>${esc(SYNC)}</div>`;
   const n = notifItems().filter(x => x.ts > lastSeen()).length;
   $("#bell").innerHTML = I.bell + (n ? `<span class="badge">${n > 9 ? "9+" : n}</span>` : "");
   // Identité
@@ -765,6 +781,11 @@ function vSettings() {
     <div style="margin-top:12px"><button class="btn ghost" onclick="togglePreview()">${I.eye} Voir l'espace joueur</button></div>
   </div>
   <div class="card" style="max-width:640px;margin-top:16px">
+    <h3>Application mobile et ordinateur</h3>
+    <p class="muted" style="margin:0 0 10px">L'application s'installe sur tous les téléphones (Android, iPhone) et ordinateurs (Windows, Mac), directement depuis le navigateur, sans passer par un store. Transmettez simplement l'adresse <b>${esc(location.origin)}</b> à vos joueurs.</p>
+    <button class="btn" onclick="installApp()">📲 Installer / voir la marche à suivre</button>
+  </div>
+  <div class="card" style="max-width:640px;margin-top:16px">
     <h3>Données</h3>
     <p class="muted" style="margin:0">Les données sont enregistrées sur le serveur du club et synchronisées entre tous les appareils. Gardez régulièrement une copie de sauvegarde.</p>
     <div style="margin-top:12px"><button class="btn ghost" onclick="copyExport()">Copier une sauvegarde (JSON)</button></div>
@@ -929,6 +950,39 @@ function askDelete(col, id) {
   <footer><button class="btn ghost" onclick="closeModal()">Annuler</button><button class="btn danger" onclick="removeItem('${col}','${id}');closeModal();toast('Supprimé')">Supprimer</button></footer>`;
   $("#ov").classList.add("open");
 }
+
+/* ================= Installation (PWA) ================= */
+let deferredPrompt = null;
+const isStandalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isMobile = () => /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent) || isIOS();
+function updateInstallUI() {
+  const can = !isStandalone();
+  const li = $("#loginInstall"); if (li) li.style.display = can ? "" : "none";
+  const bar = $("#installBar"); if (bar) bar.classList.toggle("show", can && isMobile() && lsGet("afm_install_dismissed", "") !== "1");
+}
+function dismissInstall() { lsSet("afm_install_dismissed", "1"); updateInstallUI(); }
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredPrompt = e; updateInstallUI(); });
+window.addEventListener("appinstalled", () => { deferredPrompt = null; toast("Application AFM installée"); updateInstallUI(); if (ME) renderChrome(); });
+async function installApp() {
+  if (isStandalone()) { toast("L'application est déjà installée"); return; }
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    try { const c = await deferredPrompt.userChoice; if (c.outcome === "accepted") dismissInstall(); } catch (e) {}
+    deferredPrompt = null; return;
+  }
+  const ua = navigator.userAgent;
+  let steps;
+  if (isIOS()) steps = `<p class="full" style="margin:0"><b>Sur iPhone / iPad</b> (avec <b>Safari</b>) :</p><ol class="steps full"><li>Touchez le bouton <b>Partager</b> <span style="font-size:18px">⬆️</span> en bas de l'écran.</li><li>Faites défiler et touchez <b>« Sur l'écran d'accueil »</b>.</li><li>Touchez <b>Ajouter</b> en haut à droite.</li></ol><p class="full muted" style="margin:0;font-size:12.5px">Si vous utilisez Chrome sur iPhone : menu ⋯ → <b>Ajouter à l'écran d'accueil</b>.</p>`;
+  else if (/android/i.test(ua)) steps = `<p class="full" style="margin:0"><b>Sur Android</b> (Samsung, Tecno, Infinix, Xiaomi, Itel…) :</p><ol class="steps full"><li>Ouvrez cette page avec <b>Chrome</b> (ou Samsung Internet).</li><li>Touchez le menu <b>⋮</b> en haut à droite.</li><li>Touchez <b>« Installer l'application »</b> ou <b>« Ajouter à l'écran d'accueil »</b>.</li><li>Confirmez avec <b>Installer</b>.</li></ol>`;
+  else steps = `<p class="full" style="margin:0"><b>Sur ordinateur</b> (Windows, Mac, Linux) :</p><ol class="steps full"><li>Ouvrez cette page avec <b>Google Chrome</b> ou <b>Microsoft Edge</b>.</li><li>Cliquez sur l'icône <b>Installer</b> 🖥️⬇ à droite de la barre d'adresse.<br><span class="muted">Ou : menu ⋮ → <b>Caster, enregistrer et partager → Installer la page en tant qu'application</b> (Chrome) / <b>Applications → Installer ce site</b> (Edge).</span></li><li>Cliquez sur <b>Installer</b>. AFM apparaît dans le menu Démarrer / le Dock.</li></ol><p class="full muted" style="margin:0;font-size:12.5px">Sur Mac avec Safari : menu <b>Fichier → Ajouter au Dock</b>.</p>`;
+  $("#modal").innerHTML = `<header><h2>Installer l'application AFM</h2><button class="icon-btn" onclick="closeModal()">${I.x}</button></header>
+  <div class="body"><div class="full" style="display:flex;align-items:center;gap:12px"><img src="/icon-192.png" style="width:52px;border-radius:12px" alt=""><div><b>AFM</b><br><small class="muted">${esc(location.host)}</small></div></div>${steps}</div>
+  <footer><button class="btn" onclick="closeModal()">Compris</button></footer>`;
+  $("#ov").classList.add("open");
+}
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+updateInstallUI();
 
 /* ================= Démarrage ================= */
 initStore();
