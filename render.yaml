@@ -1,10 +1,9 @@
-# Configuration Render (Blueprint) pour l'application AFM.
-# Render > New > Blueprint > choisir ce dépôt GitHub.
 services:
   - type: web
     name: afm-club
     runtime: node
-    plan: free            # passez à "starter" pour éviter la mise en veille
+    region: ohio
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
@@ -12,10 +11,10 @@ services:
       - key: NODE_VERSION
         value: "22"
       - key: SESSION_SECRET
-        generateValue: true      # clé de sécurité générée automatiquement par Render
+        generateValue: true
       - key: ADMIN_USERNAME
         value: admin
       - key: ADMIN_PASSWORD
-        sync: false              # Render vous demandera de le saisir
+        sync: false
       - key: DATABASE_URL
-        sync: false              # adresse de votre base PostgreSQL (voir README)
+        sync: false
