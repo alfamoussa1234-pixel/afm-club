@@ -240,6 +240,40 @@ main{padding:22px 32px 60px;min-width:0}
 .install-bar div{flex:1;font-size:13px;line-height:1.3}
 .install-bar.show{display:flex}
 .steps{margin:0;padding-left:20px}.steps li{margin:6px 0}
+.pres-cover{position:relative;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,var(--pri),var(--pri-dd));color:#fff;min-height:280px;display:flex;align-items:flex-end;border-bottom:5px solid var(--gold)}
+.pres-cover>img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pres-cover:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,11,64,.15) 0%,rgba(13,11,64,.88) 85%)}
+.pres-cover .in{position:relative;z-index:1;display:flex;gap:20px;align-items:flex-end;padding:26px;width:100%}
+.pres-cover .in>img{width:110px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.4));flex:none}
+.pres-cover h1{margin:0;font-size:40px;line-height:1}
+.pres-cover .slogan{color:var(--gold);font-family:"Barlow Condensed";font-size:22px;font-weight:700;margin-top:4px;letter-spacing:.02em}
+.pres-cover p{margin:8px 0 0;max-width:640px;color:#e4e4f7}
+.pres-sec h2{font-size:26px;margin:0 0 10px;display:flex;align-items:center;gap:10px}
+.pres-sec h2:before{content:"";width:6px;height:24px;background:var(--gold);border-radius:3px}
+.pres-sec p.txt{margin:0;white-space:pre-wrap;line-height:1.65;font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips span{background:var(--pri-l);color:var(--pri);font-weight:600;border-radius:99px;padding:6px 14px}
+.quote{position:relative;font-size:15px;line-height:1.65;white-space:pre-wrap;padding-left:18px;border-left:4px solid var(--gold);font-style:italic}
+.pres-pres{display:flex;gap:12px;align-items:center;margin-top:14px}
+.pres-pres img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid var(--gold)}
+.info-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.info-row:last-child{border-bottom:0}
+.info-row .k{color:var(--muted);min-width:110px;font-size:13px}
+.info-row a{color:var(--pri);font-weight:600}
+.socials{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.socials a{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:99px;padding:6px 12px;text-decoration:none;color:var(--ink);font-weight:600;font-size:13px}
+.socials a:hover{border-color:var(--pri);background:var(--pri-l)}
+.chiffre-row{display:flex;gap:8px;margin-bottom:6px}
+.chiffre-row input:first-child{width:110px;flex:none}
+.pub{position:fixed;inset:0;z-index:35;background:var(--bg);overflow-y:auto;display:none}
+.pub.open{display:block}
+.pub .pbar{position:sticky;top:0;z-index:2;background:var(--pri-dd);color:#fff;display:flex;align-items:center;gap:10px;padding:10px 18px;padding-top:calc(10px + env(safe-area-inset-top));border-bottom:3px solid var(--gold)}
+.pub .pbar img{width:36px}
+.pub .pbar b{font-family:"Barlow Condensed";font-size:22px;flex:1}
+.pub .pin{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
+.cta{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:22px 0 4px}
+.modal.wide{max-width:760px}
+.fsec{grid-column:1/-1;font-family:"Barlow Condensed";font-size:19px;font-weight:700;color:var(--pri);border-bottom:2px solid var(--gold-l);padding-bottom:4px;margin-top:6px}
 .mob-top{display:none}
 .show-m{display:none}
 @media (max-width:980px){
@@ -271,6 +305,10 @@ main{padding:22px 32px 60px;min-width:0}
   .kpi3 .lab{font-size:10.5px}
   .toast{bottom:88px}
   .tl .card{grid-template-columns:1fr}
+  .pres-cover{min-height:240px}
+  .pres-cover .in{flex-direction:column;align-items:flex-start;padding:18px;gap:10px}
+  .pres-cover .in>img{width:72px}
+  .pres-cover h1{font-size:30px}
   .tl img{width:100%;height:auto;max-height:240px}
   .gal{grid-template-columns:repeat(3,1fr);gap:4px}
   .np{top:62px;right:12px}
@@ -281,6 +319,7 @@ main{padding:22px 32px 60px;min-width:0}
 </style>
 </head>
 <body>
+<div class="pub" id="pubPres"><div class="pbar"><img src="logo.png" alt=""><b id="pubName">AFM</b><button class="btn gold sm" onclick="closePublicPres()">Se connecter</button></div><div class="pin" id="pubBody"></div></div>
 <div class="login" id="login">
   <div class="lcard">
     <img src="logo.png" alt="Logo AFM">
@@ -304,6 +343,7 @@ main{padding:22px 32px 60px;min-width:0}
       <button class="btn gold" style="width:100%;justify-content:center;padding:11px">Créer mon compte fan</button>
       <p class="muted" style="font-size:12px;margin:4px 0 0">Votre numéro sert uniquement à vous connecter. Il n'est jamais affiché aux autres utilisateurs.</p>
     </form>
+    <button type="button" class="btn ghost" style="width:100%;justify-content:center" onclick="openPublicPres()">🏟️ Découvrir le club AFM</button>
     <button type="button" class="btn ghost" id="loginInstall" style="width:100%;justify-content:center;display:none" onclick="installApp()">📲 Installer l'application</button>
   </div>
 </div>
@@ -424,7 +464,7 @@ function applyState(d) {
   ME = d.user; IS_ADMIN = ME.role === "admin"; IS_STAFF = IS_ADMIN || ME.role === "dirigeant"; MY_ID = ME.id; canWrite = IS_STAFF;
   if (!IS_STAFF) PREVIEW = null;
   COLS.forEach(c => S[c] = d[c] || []);
-  S.comptes = d.comptes || []; S.users = d.users || []; S.fansCount = d.fansCount || 0;
+  S.comptes = d.comptes || []; S.users = d.users || []; S.fansCount = d.fansCount || 0; S.presentation = d.presentation || {};
   if (d.settings) S.settings = { ...S.settings, ...d.settings };
   LOADED = true;
 }
@@ -457,6 +497,7 @@ function afterLogin() {
 function showLogin() {
   clearInterval(polling); document.querySelector(".app").style.display = "none"; closeModal();
   $("#login").style.display = "flex"; $("#loginErr").textContent = "";
+  if (location.hash === "#presentation") { openPublicPres(); return; }
   setTimeout(() => { const u = $("#lUser"); if (u) u.focus(); }, 30);
 }
 async function doLogin(f) {
@@ -536,8 +577,10 @@ const FAN_ROUTES = [
   { id: "bibliotheque", label: "Le club", short: "Club", icon: "book", fn: vLibrary },
 ];
 const routes = () => { const v = VIEW(); return v === "staff" ? ADMIN_ROUTES.filter(r => !r.adminOnly || IS_ADMIN) : v === "joueur" ? PLAYER_ROUTES : FAN_ROUTES; };
-const UI = { pSearch: "", pPoste: "Tous", mFilter: "tous", fType: "tous", dFilter: "attente", lib: "histoire", galCat: "Toutes", uFilter: "equipe", uSearch: "" };
-const route = () => { const h = (location.hash || "").slice(1); const rs = routes().filter(r => !r.sep); return rs.find(r => r.id === h) || rs[0]; };
+const UI = { pSearch: "", pPoste: "Tous", mFilter: "tous", fType: "tous", dFilter: "attente", lib: "presentation", galCat: "Toutes", uFilter: "equipe", uSearch: "" };
+const route = () => { const h = (location.hash || "").slice(1); const rs = routes().filter(r => !r.sep);
+  if (h === "presentation") { UI.lib = "presentation"; return rs.find(r => r.id === "bibliotheque") || rs[0]; }
+  return rs.find(r => r.id === h) || rs[0]; };
 window.addEventListener("hashchange", () => { if (!ME) return; closeNotif(); render(); window.scrollTo(0, 0); });
 
 function renderChrome() {
@@ -1065,7 +1108,7 @@ function openForm(col, id) {
 function scorerRow(b = {}) { return `<div class="scorer-row"><select class="input" name="sc_p">${playerOpts(b.playerId)}</select><input class="input" type="number" min="1" name="sc_n" value="${esc(b.buts || 1)}" title="Nombre de buts"><button type="button" class="icon-btn" onclick="this.parentElement.remove()">${I.x}</button></div>`; }
 function addScorer() { $("#scorers").insertAdjacentHTML("beforeend", scorerRow()); }
 function syncCats(t) { $("#catSel").innerHTML = opt(t === "recette" ? CAT_R : CAT_D); }
-function closeModal() { $("#ov").classList.remove("open"); FORM = null; }
+function closeModal() { $("#ov").classList.remove("open"); $("#modal").classList.remove("wide"); FORM = null; }
 $("#ov").addEventListener("mousedown", e => { if (e.target.id === "ov") closeModal(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape") { closeModal(); closeNotif(); } });
 
@@ -1098,12 +1141,12 @@ function askDelete(col, id) {
 
 /* ================= Photos ================= */
 const avatar = (p, size = 32) => p && p.photo ? `<img class="avatar" style="width:${size}px;height:${size}px" src="/media/${esc(p.photo)}" alt="" loading="lazy">` : `<span class="jersey" style="width:${size}px;height:${size}px">${esc(p && p.numero || "–")}</span>`;
-function photoField(id, maxDim) {
-  return `<div class="full"><div class="flabel" style="margin-bottom:6px">Photo</div><div class="photo-field"><div class="pv">${id ? `<img src="/media/${esc(id)}" alt="">` : "Aucune photo"}</div>
+function photoField(id, maxDim, name = "photo", label = "Photo") {
+  return `<div class="full"><div class="flabel" style="margin-bottom:6px">${label}</div><div class="photo-field"><div class="pv">${id ? `<img src="/media/${esc(id)}" alt="">` : "Aucune photo"}</div>
   <div style="display:flex;flex-direction:column;gap:6px"><button type="button" class="btn ghost sm" onclick="choosePhoto(this,${maxDim})">${I.img.replace("<svg", '<svg width="15" height="15"')} ${id ? "Changer la photo" : "Choisir une photo"}</button>${id ? `<button type="button" class="btn ghost sm" onclick="clearPhoto(this)">Retirer la photo</button>` : ""}<small class="muted">Photo du téléphone ou de l'ordinateur. Elle est réduite automatiquement.</small></div>
-  <input type="hidden" name="photo" value="${esc(id || "")}"></div></div>`;
+  <input type="hidden" name="${name}" value="${esc(id || "")}"></div></div>`;
 }
-function clearPhoto(btn) { const w = btn.closest(".photo-field"); w.querySelector("input[name=photo]").value = ""; w.querySelector(".pv").innerHTML = "Aucune photo"; btn.remove(); }
+function clearPhoto(btn) { const w = btn.closest(".photo-field"); w.querySelector("input[type=hidden]").value = ""; w.querySelector(".pv").innerHTML = "Aucune photo"; btn.remove(); }
 function pickFiles(multiple) {
   return new Promise(res => { const i = document.createElement("input"); i.type = "file"; i.accept = "image/*"; i.multiple = !!multiple; i.onchange = () => res([...i.files]); i.click(); });
 }
@@ -1124,7 +1167,7 @@ async function choosePhoto(btn, maxDim) {
   const [file] = await pickFiles(false); if (!file) return;
   const w = btn.closest(".photo-field"), pv = w.querySelector(".pv");
   pv.innerHTML = "Envoi…"; window._uploading = true; btn.disabled = true;
-  try { const id = await uploadImage(file, maxDim); w.querySelector("input[name=photo]").value = id; pv.innerHTML = `<img src="/media/${esc(id)}" alt="">`; }
+  try { const id = await uploadImage(file, maxDim); w.querySelector("input[type=hidden]").value = id; pv.innerHTML = `<img src="/media/${esc(id)}" alt="">`; }
   catch (e) { pv.innerHTML = "Échec"; apiErr(e.status ? e : { message: "Image illisible. Essayez une photo JPEG ou PNG.", status: 1 }); }
   window._uploading = false; btn.disabled = false;
 }
@@ -1132,14 +1175,18 @@ async function choosePhoto(btn, maxDim) {
 /* ================= Bibliothèque ================= */
 const FONCTIONS = ["Président", "Vice-président", "Secrétaire général", "Trésorier", "Dirigeant", "Entraîneur principal", "Entraîneur adjoint", "Entraîneur des gardiens", "Préparateur physique", "Médecin / Kiné", "Intendant", "Communication", "Autre"];
 const GAL_CATS = ["Matchs", "Entraînements", "Événements", "Membres", "Trophées", "Autre"];
-const LIB_TABS = [["histoire", "Parcours"], ["trophees", "Trophées"], ["membres", "Membres du club"], ["galerie", "Galerie photos"]];
+const LIB_TABS = [["presentation", "Présentation"], ["histoire", "Parcours"], ["trophees", "Trophées"], ["membres", "Membres du club"], ["galerie", "Galerie photos"]];
 const libEdit = (col, id) => canWrite && isAdminView() ? `<div class="ft"><button class="icon-btn" title="Modifier" onclick="openForm('${col}','${id}')">${I.edit}</button><button class="icon-btn" title="Supprimer" onclick="askDelete('${col}','${id}')">${I.trash}</button></div>` : "";
 const photoOr = (id, ic) => id ? `<img src="/media/${esc(id)}" alt="" loading="lazy">` : I[ic];
 function vLibrary() {
-  const tab = LIB_TABS.some(t => t[0] === UI.lib) ? UI.lib : "histoire";
+  const tab = LIB_TABS.some(t => t[0] === UI.lib) ? UI.lib : "presentation";
   const edit = canWrite && isAdminView();
-  const addBtn = { histoire: `<button class="btn" onclick="openForm('histoire')">${I.plus} Ajouter une étape</button>`, trophees: `<button class="btn" onclick="openForm('trophees')">${I.plus} Ajouter un trophée</button>`, membres: `<button class="btn" onclick="openForm('membres')">${I.plus} Ajouter un membre</button>`, galerie: `<button class="btn gold" onclick="addGalleryPhotos()">${I.plus} Ajouter des photos</button>` }[tab];
+  const addBtn = { presentation: `<button class="btn gold" onclick="openPresForm()">${I.edit.replace("<svg", '<svg width="15" height="15"')} Modifier la présentation</button>`, histoire: `<button class="btn" onclick="openForm('histoire')">${I.plus} Ajouter une étape</button>`, trophees: `<button class="btn" onclick="openForm('trophees')">${I.plus} Ajouter un trophée</button>`, membres: `<button class="btn" onclick="openForm('membres')">${I.plus} Ajouter un membre</button>`, galerie: `<button class="btn gold" onclick="addGalleryPhotos()">${I.plus} Ajouter des photos</button>` }[tab];
   let body = "";
+  if (tab === "presentation") {
+    body = presHTML(S.presentation || {}, { nom: S.settings.nom, saison: S.settings.saison }) +
+      (edit ? `<div class="card" style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>Lien public à partager</b><br><small class="muted">Visible sans compte : idéal pour les sponsors, partenaires et futurs supporters.</small><div style="font-family:ui-monospace,monospace;margin-top:4px">${esc(location.origin)}/#presentation</div></div><button class="btn ghost" onclick="navigator.clipboard.writeText(location.origin+'/#presentation').then(()=>toast('Lien copié'),()=>toast('Copie impossible'))">Copier le lien</button></div>` : "");
+  }
   if (tab === "histoire") {
     const list = [...S.histoire].sort((a, b) => (+a.annee || 0) - (+b.annee || 0) || (a.createdAt || "").localeCompare(b.createdAt || ""));
     window._hist = list.filter(x => x.photo).map(x => ({ photo: x.photo, legende: x.annee + " · " + x.titre }));
@@ -1189,6 +1236,90 @@ function showLb() {
 function lbStep(d) { LB.i = (LB.i + d + LB.list.length) % LB.list.length; showLb(); }
 function closeLb() { $("#lb").classList.remove("open"); }
 document.addEventListener("keydown", e => { if (!$("#lb").classList.contains("open")) return; if (e.key === "Escape") closeLb(); if (e.key === "ArrowLeft") lbStep(-1); if (e.key === "ArrowRight") lbStep(1); });
+
+/* ================= Présentation du club ================= */
+const SOCIALS = [["facebook", "Facebook"], ["instagram", "Instagram"], ["tiktok", "TikTok"], ["youtube", "YouTube"], ["x", "X (Twitter)"], ["site", "Site web"]];
+const safeUrl = u => /^https?:\/\/[^\s<>"']+$/i.test(String(u || "")) ? String(u) : "";
+const digits = s => String(s || "").replace(/\D/g, "");
+function presHTML(p, o = {}) {
+  const nom = esc(o.nom || "AFM");
+  const filled = !!(p.presentation || p.accroche || p.motPresident || p.mission);
+  const chiffres = (p.chiffres || []).length ? p.chiffres : (p.fondation ? [{ valeur: p.fondation, libelle: "Année de fondation" }] : []);
+  const valeurs = String(p.valeurs || "").split(/\n|,|;/).map(s => s.trim()).filter(Boolean);
+  const socials = SOCIALS.filter(([k]) => safeUrl(p[k]));
+  const wa = digits(p.whatsapp);
+  const infos = [
+    p.fondation && ["Fondé en", esc(p.fondation)],
+    p.couleurs && ["Couleurs", esc(p.couleurs)],
+    p.siege && ["Siège", esc(p.siege)],
+    p.stade && ["Stade", esc(p.stade)],
+    p.telephone && ["Téléphone", `<a href="tel:${esc(digits(p.telephone))}">${esc(p.telephone)}</a>`],
+    wa && ["WhatsApp", `<a href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">${esc(p.whatsapp)}</a>`],
+    p.email && ["E-mail", `<a href="mailto:${esc(p.email)}">${esc(p.email)}</a>`],
+  ].filter(Boolean);
+  return `<div class="pres-cover">${p.couverture ? `<img class="bg" src="/media/${esc(p.couverture)}" alt="">` : ""}<div class="in"><img src="logo.png" alt="Logo ${nom}"><div><h1>${nom}</h1><div class="slogan">${esc(p.slogan || "Afrique Football Management")}</div>${p.accroche ? `<p>${esc(p.accroche)}</p>` : (!filled ? `<p>Club de football fondé en 2021.${o.saison ? " Saison " + esc(o.saison) + "." : ""}</p>` : "")}</div></div></div>
+  ${chiffres.length ? `<div class="grid kpis" style="margin-top:16px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">${chiffres.map((c, i) => `<div class="card kpi ${i === 0 ? "accent" : ""}"><div class="val">${esc(c.valeur)}</div><div class="sub" style="font-size:13px">${esc(c.libelle)}</div></div>`).join("")}</div>` : ""}
+  ${!filled && !infos.length ? `<div class="card" style="margin-top:16px">${empty(canWrite && isAdminView() ? "La présentation du club n'est pas encore rédigée. Cliquez sur « Modifier la présentation » pour la remplir." : "La présentation complète du club arrive bientôt.", "book")}</div>` : `
+  <div class="grid two" style="margin-top:16px;align-items:start">
+    <div class="grid" style="gap:16px">
+      ${p.presentation ? `<div class="card pres-sec"><h2>Qui sommes-nous ?</h2><p class="txt">${esc(p.presentation)}</p></div>` : ""}
+      ${p.mission || valeurs.length ? `<div class="card pres-sec">${p.mission ? `<h2>Notre mission</h2><p class="txt">${esc(p.mission)}</p>` : ""}${valeurs.length ? `<h2 style="margin-top:${p.mission ? 18 : 0}px">Nos valeurs</h2><div class="chips">${valeurs.map(v => `<span>${esc(v)}</span>`).join("")}</div>` : ""}</div>` : ""}
+    </div>
+    <div class="grid" style="gap:16px">
+      ${p.motPresident ? `<div class="card pres-sec"><h2>Le mot du président</h2><div class="quote">${esc(p.motPresident)}</div>${p.presidentNom ? `<div class="pres-pres">${p.presidentPhoto ? `<img src="/media/${esc(p.presidentPhoto)}" alt="">` : ""}<div><b>${esc(p.presidentNom)}</b><br><small class="muted">${esc(p.presidentTitre || "Président du club")}</small></div></div>` : ""}</div>` : ""}
+      ${infos.length || socials.length ? `<div class="card pres-sec"><h2>Infos pratiques</h2>${infos.map(([k, v]) => `<div class="info-row"><span class="k">${k}</span><span>${v}</span></div>`).join("")}${socials.length ? `<div class="socials">${socials.map(([k, l]) => `<a href="${esc(safeUrl(p[k]))}" target="_blank" rel="noopener">${l} ↗</a>`).join("")}</div>` : ""}</div>` : ""}
+    </div>
+  </div>`}`;
+}
+function chiffreRow(c = {}) { return `<div class="chiffre-row"><input class="input" name="ch_v" value="${esc(c.valeur || "")}" placeholder="Ex. 2021" maxlength="20"><input class="input" name="ch_l" value="${esc(c.libelle || "")}" placeholder="Ex. Année de fondation" maxlength="60"><button type="button" class="icon-btn" onclick="this.parentElement.remove()">${I.x}</button></div>`; }
+function openPresForm() {
+  const p = S.presentation || {};
+  const ta = (n, rows, ph) => `<textarea class="input" name="${n}" rows="${rows}" placeholder="${ph || ""}">${esc(p[n] || "")}</textarea>`;
+  $("#modal").classList.add("wide");
+  $("#modal").innerHTML = `<form onsubmit="event.preventDefault();submitPres(this)"><header><h2>Présentation du club</h2><button type="button" class="icon-btn" onclick="closeModal()">${I.x}</button></header>
+  <div class="body">
+    <div class="fsec">En-tête</div>
+    ${field("Slogan", inp("slogan", p.slogan, "text", 'placeholder="Ex. Ensemble vers l\'excellence" maxlength="120"'), true)}
+    ${field("Phrase d'accroche", ta("accroche", 2, "Une ou deux phrases qui résument le club"), true)}
+    ${photoField(p.couverture, 1800, "couverture", "Photo de couverture (équipe, stade…)")}
+    <div class="fsec">Le club</div>
+    ${field("Qui sommes-nous ?", ta("presentation", 6, "Histoire en bref, ambitions, catégories (seniors, jeunes…), palmarès…"), true)}
+    ${field("Notre mission", ta("mission", 3, "Ex. Former des jeunes talents et les accompagner vers le haut niveau"), true)}
+    ${field("Nos valeurs (une par ligne)", ta("valeurs", 3, "Ex. Respect, Discipline, Solidarité"), true)}
+    <div class="full"><div class="flabel" style="margin-bottom:6px">Chiffres clés (jusqu'à 6)</div><div id="chiffres">${(p.chiffres || []).map(chiffreRow).join("")}</div><button type="button" class="btn ghost sm" onclick="if(document.querySelectorAll('.chiffre-row').length<6)document.getElementById('chiffres').insertAdjacentHTML('beforeend',chiffreRow())">${I.plus} Ajouter un chiffre</button></div>
+    <div class="fsec">Le mot du président</div>
+    ${field("Message", ta("motPresident", 5), true)}
+    ${field("Nom du président", inp("presidentNom", p.presidentNom))}${field("Titre", inp("presidentTitre", p.presidentTitre, "text", 'placeholder="Président du club"'))}
+    ${photoField(p.presidentPhoto, 700, "presidentPhoto", "Photo du président")}
+    <div class="fsec">Infos pratiques</div>
+    ${field("Année de fondation", inp("fondation", p.fondation || "2021", "text", 'maxlength="10"'))}${field("Couleurs", inp("couleurs", p.couleurs, "text", 'placeholder="Bleu roi et or"'))}
+    ${field("Siège / adresse", inp("siege", p.siege), true)}
+    ${field("Stade / terrain", inp("stade", p.stade || S.settings.stade))}${field("Téléphone", inp("telephone", p.telephone, "tel"))}
+    ${field("WhatsApp", inp("whatsapp", p.whatsapp, "tel", 'placeholder="+223 …"'))}${field("E-mail", inp("email", p.email, "email"))}
+    <div class="fsec">Réseaux sociaux (liens complets, https://…)</div>
+    ${SOCIALS.map(([k, l]) => field(l, inp(k, p[k], "url", 'placeholder="https://"'))).join("")}
+  </div><footer><button type="button" class="btn ghost" onclick="closeModal()">Annuler</button><button class="btn">Enregistrer</button></footer></form>`;
+  $("#ov").classList.add("open");
+}
+async function submitPres(f) {
+  if (window._uploading) { toast("Patientez, la photo est en cours d'envoi…"); return; }
+  const fd = new FormData(f), d = {};
+  for (const [k, v] of fd.entries()) if (!["ch_v", "ch_l"].includes(k)) d[k] = String(v).trim();
+  const vs = fd.getAll("ch_v"), ls = fd.getAll("ch_l");
+  d.chiffres = vs.map((v, i) => ({ valeur: String(v).trim(), libelle: String(ls[i] || "").trim() })).filter(c => c.valeur && c.libelle);
+  try { const r = await api("PUT", "presentation", d); S.presentation = r.presentation; closeModal(); bumpVersion(); render(); toast("Présentation enregistrée"); } catch (e) { apiErr(e); }
+}
+async function openPublicPres() {
+  $("#pubPres").classList.add("open"); $("#pubBody").innerHTML = `<div class="empty">Chargement…</div>`;
+  if (location.hash !== "#presentation") history.replaceState(null, "", "#presentation");
+  try {
+    const d = await (await fetch("/api/presentation")).json();
+    $("#pubName").textContent = d.nom || "AFM";
+    $("#pubBody").innerHTML = presHTML(d.presentation || {}, { nom: d.nom, saison: d.saison }) +
+      `<div class="cta">${d.fansOuverts ? `<button class="btn gold" onclick="closePublicPres('reg')">⚽ Devenir supporter</button>` : ""}<button class="btn" onclick="closePublicPres()">Se connecter</button><button class="btn ghost" onclick="installApp()">📲 Installer l'application</button></div>`;
+  } catch (e) { $("#pubBody").innerHTML = `<div class="card">${empty("Le serveur se réveille, réessayez dans quelques secondes.", "gear")}</div>`; }
+}
+function closePublicPres(tab) { $("#pubPres").classList.remove("open"); history.replaceState(null, "", location.pathname); loginTab(tab === "reg" ? "reg" : "login"); }
 
 /* ================= Espace fans ================= */
 function vFHome() {
