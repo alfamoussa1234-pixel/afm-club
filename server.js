@@ -204,6 +204,7 @@ async function stateFor(user) {
   const settings = await store.get("settings", "club");
   out.settings = settings ? (({ id, ...s }) => s)(settings) : null;
   for (const c of LIBRARY_COLS) out[c] = await store.all(c);
+  out.presentation = await getPresentation();
   out.matches = await store.all("matches");
   out.players = await store.all("players");
   const annonces = await store.all("annonces");
@@ -244,6 +245,23 @@ async function stateFor(user) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Présentation du club (publique)                                     */
+/* ------------------------------------------------------------------ */
+const PRES_TEXT = { slogan: 120, accroche: 600, presentation: 6000, motPresident: 4000, presidentNom: 80, presidentTitre: 80, mission: 3000, valeurs: 1500, fondation: 10, couleurs: 120, siege: 300, stade: 200, telephone: 40, email: 120, whatsapp: 40 };
+const PRES_URLS = ["facebook", "instagram", "tiktok", "youtube", "x", "site"];
+const PRES_PHOTOS = ["couverture", "presidentPhoto"];
+function cleanPresentation(b) {
+  const p = {};
+  for (const [k, max] of Object.entries(PRES_TEXT)) p[k] = String(b[k] ?? "").trim().slice(0, max);
+  for (const k of PRES_URLS) { const u = String(b[k] ?? "").trim().slice(0, 300); p[k] = /^https?:\/\/[^\s<>"']+$/i.test(u) ? u : ""; }
+  for (const k of PRES_PHOTOS) p[k] = validId(b[k]) ? b[k] : "";
+  p.chiffres = (Array.isArray(b.chiffres) ? b.chiffres : []).slice(0, 6).map(c => ({ valeur: String((c && c.valeur) ?? "").trim().slice(0, 20), libelle: String((c && c.libelle) ?? "").trim().slice(0, 60) })).filter(c => c.valeur && c.libelle);
+  p.updatedAt = new Date().toISOString();
+  return p;
+}
+async function getPresentation() { const p = await store.get("presentation", "club"); if (!p) return {}; const { id, ...rest } = p; return rest; }
+
+/* ------------------------------------------------------------------ */
 /* Images (photos des joueurs, membres, trophées, galerie)             */
 /* ------------------------------------------------------------------ */
 function decodeImage(dataUrl) {
@@ -261,10 +279,16 @@ function decodeImage(dataUrl) {
 async function serveMedia(req, res, id) {
   if (!validId(id)) return fail(res, 404, "Introuvable");
   const user = await currentUser(req);
-  if (!user) return fail(res, 401, "Connexion requise");
+  let isPublic = false;
+  if (!user) {
+    // Seules les photos de la présentation publique sont visibles sans compte
+    const p = await getPresentation();
+    if (!PRES_PHOTOS.some(k => p[k] === id)) return fail(res, 401, "Connexion requise");
+    isPublic = true;
+  }
   const m = await store.getMedia(id);
   if (!m) return fail(res, 404, "Introuvable");
-  res.writeHead(200, { "Content-Type": m.mime, "Cache-Control": "private, max-age=31536000, immutable", "X-Content-Type-Options": "nosniff" });
+  res.writeHead(200, { "Content-Type": m.mime, "Cache-Control": (isPublic ? "public" : "private") + ", max-age=31536000, immutable", "X-Content-Type-Options": "nosniff" });
   res.end(m.data);
 }
 
@@ -280,6 +304,10 @@ async function api(req, res, pathname) {
   if (m === "GET" && seg[0] === "public") {
     const s = (await store.get("settings", "club")) || {};
     return send(res, 200, { nom: s.nom || "AFM", fansOuverts: s.fansOuverts !== false });
+  }
+  if (m === "GET" && seg[0] === "presentation") {
+    const s = (await store.get("settings", "club")) || {};
+    return send(res, 200, { presentation: await getPresentation(), nom: s.nom || "AFM", saison: s.saison || "", fansOuverts: s.fansOuverts !== false });
   }
 
   if (m === "POST" && seg[0] === "login") {
@@ -359,6 +387,17 @@ async function api(req, res, pathname) {
 
   // ---- Administration et dirigeants ----
   if (!staff) return fail(res, 403, "Accès réservé à la direction du club");
+
+  // Présentation du club
+  if (m === "PUT" && seg[0] === "presentation") {
+    const b = await readBody(req, 2e5);
+    if (!isObj(b)) return fail(res, 400, "Format invalide");
+    const old = await getPresentation();
+    const p = cleanPresentation(b);
+    await store.put("presentation", "club", p);
+    for (const k of PRES_PHOTOS) if (old[k] && old[k] !== p[k]) await store.delMedia(old[k]).catch(() => {});
+    return send(res, 200, { ok: true, presentation: p });
+  }
 
   // Envoi d'une image (déjà compressée par l'application)
   if (m === "POST" && seg[0] === "media") {
