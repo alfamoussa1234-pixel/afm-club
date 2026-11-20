@@ -188,6 +188,50 @@ main{padding:22px 32px 60px;min-width:0}
 .lcard img{width:110px;margin:-4px auto 0}
 .lcard h1{margin:0;font-size:26px}
 .lcard label{text-align:left}
+.lform{display:flex;flex-direction:column;gap:12px}
+.ltabs{display:flex;width:100%}.ltabs button{flex:1}
+.lcard{max-height:calc(100vh - 40px);overflow-y:auto}
+/* Bibliothèque */
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.lcardx{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--sh);display:flex;flex-direction:column}
+.lcardx .ph{aspect-ratio:4/3;background:linear-gradient(135deg,var(--pri),var(--pri-dd));display:grid;place-items:center;color:var(--gold);overflow:hidden}
+.lcardx .ph img{width:100%;height:100%;object-fit:cover}
+.lcardx .ph svg{width:46px;height:46px;opacity:.7}
+.lcardx .bd{padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:4px}
+.lcardx .bd b{font-size:15px}
+.lcardx .bd p{margin:4px 0 0;font-size:13px;color:#3d3f58;white-space:pre-wrap}
+.lcardx .ft{display:flex;justify-content:flex-end;padding:0 8px 8px}
+.mem .ph{aspect-ratio:1/1}
+.timeline{position:relative;padding-left:28px;max-width:820px}
+.timeline:before{content:"";position:absolute;left:9px;top:6px;bottom:6px;width:3px;background:linear-gradient(var(--gold),var(--pri));border-radius:3px}
+.tl{position:relative;margin-bottom:16px}
+.tl:before{content:"";position:absolute;left:-25px;top:16px;width:15px;height:15px;border-radius:50%;background:var(--gold);border:3px solid #fff;box-shadow:0 0 0 2px var(--pri)}
+.tl .card{display:grid;grid-template-columns:1fr auto;gap:14px}
+.tl .yr{font-family:"Barlow Condensed";font-size:26px;font-weight:800;color:var(--pri);line-height:1}
+.tl img{width:160px;height:120px;object-fit:cover;border-radius:10px}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.gal .gi{position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;cursor:pointer;background:#e7e9f2}
+.gal .gi img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.gal .gi:hover img{transform:scale(1.05)}
+.gal .gi span{position:absolute;left:0;right:0;bottom:0;padding:16px 8px 6px;font-size:12px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lightbox{position:fixed;inset:0;background:rgba(5,5,25,.92);z-index:70;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px}
+.lightbox.open{display:flex}
+.lightbox img{max-width:100%;max-height:78vh;border-radius:8px}
+.lightbox .cap{color:#fff;margin-top:12px;text-align:center;max-width:700px}
+.lightbox .nav-l,.lightbox .nav-r,.lightbox .cls{position:absolute;background:rgba(255,255,255,.12);border:0;color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:22px}
+.lightbox .nav-l{left:12px;top:50%}.lightbox .nav-r{right:12px;top:50%}.lightbox .cls{right:12px;top:12px}
+.photo-field{display:flex;align-items:center;gap:12px}
+.photo-field .pv{width:84px;height:84px;border-radius:10px;background:#eceef6;display:grid;place-items:center;overflow:hidden;flex:none;color:var(--muted);font-size:11px;text-align:center}
+.photo-field .pv img{width:100%;height:100%;object-fit:cover}
+.avatar{width:32px;height:32px;border-radius:8px;object-fit:cover;flex:none}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;text-align:center;box-shadow:var(--sh)}
+.pcard .ph{aspect-ratio:1/1;background:linear-gradient(135deg,var(--pri),var(--pri-dd));display:grid;place-items:center;position:relative}
+.pcard .ph img{width:100%;height:100%;object-fit:cover}
+.pcard .ph .num{font-family:"Barlow Condensed";font-size:54px;font-weight:800;color:var(--gold)}
+.pcard .ph .nb{position:absolute;top:8px;left:8px;background:var(--gold);color:var(--pri-dd);font-family:"Barlow Condensed";font-weight:800;border-radius:6px;padding:0 7px;font-size:17px}
+.pcard .bd{padding:10px}
+.pcard .bd b{display:block}
+.pcard .bd small{color:var(--muted)}
 .lerr{color:var(--red);font-size:13px;min-height:18px}
 .me{cursor:pointer;border-radius:10px;padding:4px 8px}
 .me:hover{background:#eceef6}
@@ -226,6 +270,9 @@ main{padding:22px 32px 60px;min-width:0}
   .kpi3 .val{font-size:30px}
   .kpi3 .lab{font-size:10.5px}
   .toast{bottom:88px}
+  .tl .card{grid-template-columns:1fr}
+  .tl img{width:100%;height:auto;max-height:240px}
+  .gal{grid-template-columns:repeat(3,1fr);gap:4px}
   .np{top:62px;right:12px}
   .hero{padding:16px}
   .hero img{width:48px}
@@ -235,17 +282,30 @@ main{padding:22px 32px 60px;min-width:0}
 </head>
 <body>
 <div class="login" id="login">
-  <form class="lcard" onsubmit="event.preventDefault();doLogin(this)">
+  <div class="lcard">
     <img src="logo.png" alt="Logo AFM">
     <h1>Afrique Football Management</h1>
-    <p class="muted" style="margin:0 0 18px">Connectez-vous à l'espace du club</p>
-    <label class="flabel">Identifiant<input class="input" id="lUser" name="username" autocomplete="username" required></label>
-    <label class="flabel">Mot de passe<input class="input" type="password" name="password" autocomplete="current-password" required></label>
-    <div id="loginErr" class="lerr"></div>
-    <button class="btn" style="width:100%;justify-content:center;padding:11px">Se connecter</button>
+    <div class="seg ltabs"><button type="button" id="tabLogin" class="on" onclick="loginTab('login')">Se connecter</button><button type="button" id="tabReg" onclick="loginTab('reg')">Espace fans</button></div>
+    <form id="fLogin" onsubmit="event.preventDefault();doLogin(this)" class="lform">
+      <p class="muted" style="margin:0 0 4px">Joueurs, dirigeants et supporters</p>
+      <label class="flabel">Identifiant ou numéro de téléphone<input class="input" id="lUser" name="username" autocomplete="username" required></label>
+      <label class="flabel">Mot de passe<input class="input" type="password" name="password" autocomplete="current-password" required></label>
+      <div id="loginErr" class="lerr"></div>
+      <button class="btn" style="width:100%;justify-content:center;padding:11px">Se connecter</button>
+      <p class="muted" style="font-size:12px;margin:4px 0 0">Joueur ou dirigeant sans compte ? Demandez vos identifiants à l'administration.<br>Supporter ? <a href="#" onclick="event.preventDefault();loginTab('reg')" style="color:var(--pri);font-weight:600">Créez votre compte fan</a></p>
+    </form>
+    <form id="fReg" onsubmit="event.preventDefault();doRegister(this)" class="lform" style="display:none">
+      <p class="muted" style="margin:0 0 4px">Rejoignez les supporters de l'AFM : actualités, calendrier, résultats, effectif et histoire du club.</p>
+      <label class="flabel">Nom et prénom<input class="input" name="nom" autocomplete="name" required minlength="2"></label>
+      <label class="flabel">Numéro de téléphone<input class="input" name="telephone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ex. 76 12 34 56" required></label>
+      <label class="flabel">Mot de passe (6 caractères min.)<input class="input" type="password" name="password" autocomplete="new-password" required minlength="6"></label>
+      <label class="flabel">Confirmer le mot de passe<input class="input" type="password" name="confirm" autocomplete="new-password" required minlength="6"></label>
+      <div id="regErr" class="lerr"></div>
+      <button class="btn gold" style="width:100%;justify-content:center;padding:11px">Créer mon compte fan</button>
+      <p class="muted" style="font-size:12px;margin:4px 0 0">Votre numéro sert uniquement à vous connecter. Il n'est jamais affiché aux autres utilisateurs.</p>
+    </form>
     <button type="button" class="btn ghost" id="loginInstall" style="width:100%;justify-content:center;display:none" onclick="installApp()">📲 Installer l'application</button>
-    <p class="muted" style="font-size:12px;margin:14px 0 0">Pas encore de compte ? Demandez vos identifiants à l'administration du club.</p>
-  </form>
+  </div>
 </div>
 <div class="app" style="display:none">
   <aside class="side">
@@ -272,6 +332,7 @@ main{padding:22px 32px 60px;min-width:0}
 <div class="np" id="np"></div>
 <div class="ov" id="ov"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
+<div class="lightbox" id="lb" onclick="if(event.target.id==='lb')closeLb()"><button class="cls" onclick="closeLb()">×</button><button class="nav-l" onclick="lbStep(-1)">‹</button><img id="lbImg" alt=""><div class="cap" id="lbCap"></div><button class="nav-r" onclick="lbStep(1)">›</button></div>
 
 <script>
 /* ================= Utilitaires ================= */
@@ -304,16 +365,23 @@ const I = {
   x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   plus:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>',
   check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>',
+  book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>',
+  trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
+  img:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',
   eye:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',
 };
 
 /* ================= État & stockage (API du serveur) ================= */
-const COLS = ["players", "matches", "trainings", "finances", "annonces", "decisions"];
-const S = { players: [], matches: [], trainings: [], finances: [], annonces: [], decisions: [], comptes: [], users: [],
+const LIB_COLS = ["histoire", "trophees", "membres", "galerie"];
+const COLS = ["players", "matches", "trainings", "finances", "annonces", "decisions", ...LIB_COLS];
+const S = { players: [], matches: [], trainings: [], finances: [], annonces: [], decisions: [], histoire: [], trophees: [], membres: [], galerie: [], comptes: [], users: [], fansCount: 0,
   settings: { nom: "AFM", saison: "2026-2027", stade: "", devise: "FCFA", cotisation: 0 } };
 let ME = null, MODE = "loading", canWrite = true, LOADED = false;
-let IS_ADMIN = false, MY_ID = null, PREVIEW = false, PREVIEW_COMPTE = { id: "apercu", playerId: "", demandes: [] };
-const isAdminView = () => IS_ADMIN && !PREVIEW;
+let IS_ADMIN = false, IS_STAFF = false, MY_ID = null, PREVIEW = null, PREVIEW_COMPTE = { id: "apercu", playerId: "", demandes: [] };
+// Vue affichée : "staff" (admin/dirigeant), "joueur" ou "fan" — un membre de la direction peut prévisualiser les autres espaces
+const VIEW = () => PREVIEW || (IS_STAFF ? "staff" : ME ? ME.role : "fan");
+const isAdminView = () => VIEW() === "staff";
+const ROLE_LABEL = { admin: "Administrateur", dirigeant: "Dirigeant", joueur: "Joueur", fan: "Supporter" };
 const lsGet = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch (e) { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 
@@ -353,9 +421,10 @@ async function saveCompte(c) {
 /* Chargement et synchronisation (vérifie les nouveautés toutes les 15 s) */
 let VERSION = null, polling = null;
 function applyState(d) {
-  ME = d.user; IS_ADMIN = ME.role === "admin"; MY_ID = ME.id; canWrite = IS_ADMIN;
+  ME = d.user; IS_ADMIN = ME.role === "admin"; IS_STAFF = IS_ADMIN || ME.role === "dirigeant"; MY_ID = ME.id; canWrite = IS_STAFF;
+  if (!IS_STAFF) PREVIEW = null;
   COLS.forEach(c => S[c] = d[c] || []);
-  S.comptes = d.comptes || []; S.users = d.users || [];
+  S.comptes = d.comptes || []; S.users = d.users || []; S.fansCount = d.fansCount || 0;
   if (d.settings) S.settings = { ...S.settings, ...d.settings };
   LOADED = true;
 }
@@ -380,8 +449,7 @@ async function initStore() {
 function afterLogin() {
   $("#login").style.display = "none"; document.querySelector(".app").style.display = "";
   setSync("ok", "Synchronisé");
-  if (!IS_ADMIN && !PLAYER_ROUTES.some(r => r.id === location.hash.slice(1))) location.hash = "accueil";
-  if (IS_ADMIN && !ADMIN_ROUTES.some(r => r.id === location.hash.slice(1))) location.hash = "tableau";
+  if (!routes().some(r => r.id === location.hash.slice(1))) location.hash = routes()[0].id;
   clearInterval(polling); polling = setInterval(poll, 15000);
   render();
 }
@@ -397,7 +465,21 @@ async function doLogin(f) {
   catch (e) { $("#loginErr").textContent = e.status ? e.message : "Serveur injoignable, réessayez."; }
   btn.disabled = false;
 }
-async function logout() { try { await api("POST", "logout"); } catch (e) {} ME = null; PREVIEW = false; LOADED = false; COLS.forEach(c => S[c] = []); S.comptes = []; S.users = []; showLogin(); }
+function loginTab(t) {
+  $("#fLogin").style.display = t === "login" ? "" : "none"; $("#fReg").style.display = t === "reg" ? "" : "none";
+  $("#tabLogin").classList.toggle("on", t === "login"); $("#tabReg").classList.toggle("on", t === "reg");
+  const f = t === "login" ? $("#lUser") : $("#fReg [name=nom]"); if (f) setTimeout(() => f.focus(), 30);
+}
+async function doRegister(f) {
+  $("#regErr").textContent = "";
+  if (f.password.value !== f.confirm.value) { $("#regErr").textContent = "Les deux mots de passe ne correspondent pas."; return; }
+  const btn = f.querySelector("button"); btn.disabled = true;
+  try { await api("POST", "register", { nom: f.nom.value, telephone: f.telephone.value, password: f.password.value }); f.reset(); location.hash = "accueil"; await initStore(); toast("Bienvenue dans l'espace fans !"); }
+  catch (e) { $("#regErr").textContent = e.status ? e.message : "Serveur injoignable, réessayez."; }
+  btn.disabled = false;
+}
+fetch("/api/public").then(r => r.json()).then(d => { if (d && d.fansOuverts === false) { const t = $("#tabReg"); if (t) t.style.display = "none"; } }).catch(() => {});
+async function logout() { try { await api("POST", "logout"); } catch (e) {} ME = null; PREVIEW = null; LOADED = false; COLS.forEach(c => S[c] = []); S.comptes = []; S.users = []; showLogin(); }
 
 /* ================= Calculs ================= */
 const pById = id => S.players.find(x => x.id === id);
@@ -435,36 +517,46 @@ const ADMIN_ROUTES = [
   { id: "joueurs", label: "Joueurs", icon: "users", fn: vPlayers },
   { id: "matchs", label: "Matchs", icon: "ball", fn: vMatches },
   { id: "entrainements", label: "Entraînements", short: "Séances", icon: "cone", fn: vTrainings },
-  { id: "finances", label: "Finances", icon: "cash", fn: vFinances },
-  { id: "parametres", label: "Paramètres", short: "Réglages", icon: "gear", fn: vSettings },
+  { id: "bibliotheque", label: "Bibliothèque", short: "Club", icon: "book", fn: vLibrary },
+  { id: "finances", label: "Finances", icon: "cash", fn: vFinances, adminOnly: true },
+  { id: "parametres", label: "Paramètres", short: "Réglages", icon: "gear", fn: vSettings, adminOnly: true },
 ];
 const PLAYER_ROUTES = [
   { id: "accueil", label: "Accueil", icon: "home", fn: vPHome },
   { id: "annonces", label: "Annonces", icon: "mega", fn: vAnnonces },
   { id: "absences", label: "Mes absences", short: "Absences", icon: "inbox", fn: vPAbsences },
   { id: "calendrier", label: "Calendrier", icon: "cal", fn: vPCalendar },
+  { id: "bibliotheque", label: "Bibliothèque", short: "Club", icon: "book", fn: vLibrary },
 ];
-const routes = () => isAdminView() ? ADMIN_ROUTES : PLAYER_ROUTES;
-const UI = { pSearch: "", pPoste: "Tous", mFilter: "tous", fType: "tous", dFilter: "attente" };
+const FAN_ROUTES = [
+  { id: "accueil", label: "Accueil", icon: "home", fn: vFHome },
+  { id: "annonces", label: "Actualités", icon: "mega", fn: vAnnonces },
+  { id: "calendrier", label: "Matchs", icon: "ball", fn: vPCalendar },
+  { id: "effectif", label: "Effectif", icon: "users", fn: vFEffectif },
+  { id: "bibliotheque", label: "Le club", short: "Club", icon: "book", fn: vLibrary },
+];
+const routes = () => { const v = VIEW(); return v === "staff" ? ADMIN_ROUTES.filter(r => !r.adminOnly || IS_ADMIN) : v === "joueur" ? PLAYER_ROUTES : FAN_ROUTES; };
+const UI = { pSearch: "", pPoste: "Tous", mFilter: "tous", fType: "tous", dFilter: "attente", lib: "histoire", galCat: "Toutes", uFilter: "equipe", uSearch: "" };
 const route = () => { const h = (location.hash || "").slice(1); const rs = routes().filter(r => !r.sep); return rs.find(r => r.id === h) || rs[0]; };
-window.addEventListener("hashchange", () => { closeNotif(); render(); window.scrollTo(0, 0); });
+window.addEventListener("hashchange", () => { if (!ME) return; closeNotif(); render(); window.scrollTo(0, 0); });
 
 function renderChrome() {
   const r = route();
   $("#nav").innerHTML = routes().map(x => x.sep ? '<div class="sep"></div>' : `<a href="#${x.id}" class="${x.id === r.id ? "on" : ""}">${I[x.icon]}<span>${x.short ? `<span class="hide-m">${x.label}</span><span class="show-m">${x.short}</span>` : x.label}</span>${x.badge && x.badge() ? `<span class="badge">${x.badge()}</span>` : ""}</a>`).join("");
   const nm = S.settings.nom || "AFM"; $("#clubName").textContent = nm; $("#clubNameM").textContent = nm;
-  $("#sideFoot").innerHTML = (IS_ADMIN ? `<button class="btn ghost-w sm" onclick="togglePreview()">${I.eye} ${PREVIEW ? "Revenir à l'administration" : "Voir l'espace joueur"}</button>` : "") +
+  $("#sideFoot").innerHTML = (IS_STAFF ? (PREVIEW ? `<button class="btn ghost-w sm" onclick="setPreview(null)">${I.eye} Revenir à la gestion</button>` : `<button class="btn ghost-w sm" onclick="setPreview('joueur')">${I.eye} Voir l'espace joueur</button><button class="btn ghost-w sm" onclick="setPreview('fan')">${I.eye} Voir l'espace fans</button>`) : "") +
     (isStandalone() ? "" : `<button class="btn gold sm" onclick="installApp()">📲 Installer l'application</button>`) + `<button class="btn ghost-w sm" onclick="logout()">Se déconnecter</button><div><span class="dot ${MODE === "ok" ? "ok" : MODE === "err" ? "local" : ""}"></span>${esc(SYNC)}</div>`;
   const n = notifItems().filter(x => x.ts > lastSeen()).length;
   $("#bell").innerHTML = I.bell + (n ? `<span class="badge">${n > 9 ? "9+" : n}</span>` : "");
   // Identité
   const c = myCompte(); const p = pById(c.playerId);
-  $("#meBox").innerHTML = (isAdminView() ? `<span>${esc(ME ? ME.nom || ME.username : "")}</span><span class="tag t-pri">Administration</span>` : (p ? `<span>${esc(p.prenom)} ${esc(p.nom)}</span><span class="jersey" style="width:28px;height:28px;font-size:15px">${esc(p.numero || "–")}</span>` : `<span>${esc(ME ? ME.username : "")}</span>`));
+  $("#meBox").innerHTML = (isAdminView() ? `<span>${esc(ME ? ME.nom || ME.username : "")}</span><span class="tag t-pri">${esc(ROLE_LABEL[ME.role] || "")}</span>` : VIEW() === "fan" ? `<span>${esc(PREVIEW ? "Aperçu fan" : ME.nom || "Supporter")}</span><span class="tag t-gold">Supporter</span>` : (p ? `<span>${esc(p.prenom)} ${esc(p.nom)}</span><span class="jersey" style="width:28px;height:28px;font-size:15px">${esc(p.numero || "–")}</span>` : `<span>${esc(ME ? ME.username : "")}</span>`));
   $("#meBox").onclick = openMyAccount; $("#meBox").title = "Mon compte";
-  if (PREVIEW) $("#banner").innerHTML = `<div class="banner"><span>Aperçu de l'espace joueur, tel que vos joueurs le voient.</span><button class="btn sm" onclick="togglePreview()">Revenir à l'administration</button></div>`;
+  if (PREVIEW) $("#banner").innerHTML = `<div class="banner"><span>Aperçu de l'espace ${PREVIEW === "fan" ? "fans, tel que les supporters le voient" : "joueur, tel que vos joueurs le voient"}.</span><button class="btn sm" onclick="setPreview(null)">Revenir à la gestion</button></div>`;
   else if ($("#banner").textContent.includes("Aperçu")) $("#banner").innerHTML = "";
 }
 function render() {
+  if (!ME) return;
   renderChrome();
   const r = route();
   const active = document.activeElement; const aid = active && active.id; const pos = active && active.selectionStart;
@@ -472,17 +564,19 @@ function render() {
   if (aid) { const el = document.getElementById(aid); if (el && el.tagName === "INPUT") { el.focus(); try { el.setSelectionRange(pos, pos); } catch (e) {} } }
   if ($("#np").classList.contains("open")) renderNotif();
 }
-function togglePreview() { PREVIEW = !PREVIEW; PREVIEW_COMPTE = { id: "apercu", playerId: "", demandes: [] }; location.hash = PREVIEW ? "accueil" : "tableau"; render(); }
+function setPreview(v) { PREVIEW = v; PREVIEW_COMPTE = { id: "apercu", playerId: "", demandes: [] }; location.hash = routes()[0].id; render(); }
+function togglePreview() { setPreview(PREVIEW ? null : "joueur"); }
 const head = (title, sub, btn) => `<div class="top"><div><h1>${title}</h1><p>${sub}</p></div>${btn && canWrite && isAdminView() ? btn : ""}</div>`;
 const empty = (msg, ic = "ball") => `<div class="empty">${I[ic]}<div>${msg}</div></div>`;
-const actions = (col, id) => canWrite ? `<td class="act"><button class="icon-btn" title="Modifier" onclick="openForm('${col}','${id}')">${I.edit}</button><button class="icon-btn" title="Supprimer" onclick="askDelete('${col}','${id}')">${I.trash}</button></td>` : "<td></td>";
+const actions = (col, id) => canWrite && isAdminView() ? `<td class="act"><button class="icon-btn" title="Modifier" onclick="openForm('${col}','${id}')">${I.edit}</button><button class="icon-btn" title="Supprimer" onclick="askDelete('${col}','${id}')">${I.trash}</button></td>` : "<td></td>";
 
 /* ================= Notifications ================= */
-const seenKey = () => "afm_seen_" + (MY_ID || "x") + (isAdminView() ? "_a" : "_j");
+const seenKey = () => "afm_seen_" + (MY_ID || "x") + "_" + VIEW();
+const visibleAnnonces = () => VIEW() === "fan" ? S.annonces.filter(a => a.public === true) : S.annonces;
 const lastSeen = () => lsGet(seenKey(), "1970");
 function notifItems() {
   const items = [];
-  S.annonces.forEach(a => items.push({ ts: a.date || "", ic: "mega", cls: a.priorite === "Urgent" ? "t-red" : a.priorite === "Important" ? "t-gold" : "t-pri", title: a.titre, sub: "Annonce · " + (a.priorite || "Info"), href: "#annonces" }));
+  visibleAnnonces().forEach(a => items.push({ ts: a.date || "", ic: "mega", cls: a.priorite === "Urgent" ? "t-red" : a.priorite === "Important" ? "t-gold" : "t-pri", title: a.titre, sub: "Annonce · " + (a.priorite || "Info"), href: "#annonces" }));
   if (isAdminView()) {
     allDemandes().filter(d => statusOf(d.id) === "En attente").forEach(d => items.push({ ts: d.createdAt || "", ic: "inbox", cls: "t-gold", title: `${pName(d.playerId)} : absence déclarée`, sub: `${reqEvent(d)} · ${reqWhen(d)}`, href: "#demandes" }));
   } else {
@@ -509,12 +603,12 @@ document.addEventListener("mousedown", e => { if ($("#np").classList.contains("o
 const PRIOS = ["Info", "Important", "Urgent"];
 function annCard(a, admin) {
   return `<div class="ann ${esc(a.priorite || "Info")}"><div class="meta"><span>${ago(a.date)} · ${fmtDate(a.date)}</span>${admin && canWrite ? `<span><button class="icon-btn" title="Modifier" onclick="openForm('annonces','${a.id}')">${I.edit}</button><button class="icon-btn" title="Supprimer" onclick="askDelete('annonces','${a.id}')">${I.trash}</button></span>` : ""}</div>
-  <h4>${a.priorite && a.priorite !== "Info" ? `<span class="tag ${a.priorite === "Urgent" ? "t-red" : "t-gold"}">${esc(a.priorite)}</span>` : ""}${esc(a.titre)}</h4><p>${esc(a.message || "")}</p></div>`;
+  <h4>${a.priorite && a.priorite !== "Info" ? `<span class="tag ${a.priorite === "Urgent" ? "t-red" : "t-gold"}">${esc(a.priorite)}</span>` : ""}${admin ? (a.public ? `<span class="tag t-blue">Publique · fans</span>` : `<span class="tag t-grey">Interne</span>`) : ""}${esc(a.titre)}</h4><p>${esc(a.message || "")}</p></div>`;
 }
-const sortedAnn = () => [...S.annonces].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+const sortedAnn = () => [...visibleAnnonces()].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 function vAnnonces() {
   const admin = isAdminView(), list = sortedAnn();
-  return head("Annonces", admin ? "Communiquez avec tout l'effectif. Chaque annonce apparaît dans les notifications des joueurs." : "Les communications de l'administration du club", `<button class="btn gold" onclick="openForm('annonces')">${I.plus} Nouvelle annonce</button>`) +
+  return head(VIEW() === "fan" ? "Actualités" : "Annonces", admin ? "Les annonces internes sont lues par les joueurs et la direction. Cochez « publique » pour qu'elles soient aussi visibles par les fans." : VIEW() === "fan" ? "Les nouvelles du club AFM" : "Les communications de la direction du club", `<button class="btn gold" onclick="openForm('annonces')">${I.plus} Nouvelle annonce</button>`) +
     `<div style="max-width:760px">${list.length ? list.map(a => annCard(a, admin)).join("") : `<div class="card">${empty("Aucune annonce publiée", "mega")}</div>`}</div>`;
 }
 
@@ -603,7 +697,7 @@ function vPCalendar() {
   return `<div class="top"><div><h1>Calendrier</h1><p>Matchs, résultats et entraînements</p></div></div>
   <div class="grid two">
     <div class="card"><h3>Matchs à venir</h3>${up.length ? `<div class="list">${up.map(m => `<div class="li"><div><b>${esc(m.adversaire)}</b> <span class="tag ${m.lieu === "Domicile" ? "t-pri" : "t-blue"}">${esc(m.lieu || "")}</span><br><small class="muted">${fmtDay(m.date)}${m.heure ? " · " + esc(m.heure) : ""} · ${esc(m.competition || "")}</small></div></div>`).join("")}</div>` : empty("Aucun match programmé")}</div>
-    <div class="card"><h3>Entraînements à venir</h3>${tr.length ? `<div class="list">${tr.map(t => `<div class="li"><div><b>${fmtDay(t.date)}</b><br><small class="muted">${[t.heure, t.lieu, t.theme].filter(Boolean).map(esc).join(" · ")}</small></div></div>`).join("")}</div>` : empty("Aucun entraînement programmé", "cone")}</div>
+    ${VIEW() === "fan" ? `<div class="card"><h3>Derniers résultats</h3>${res.slice(0, 5).length ? `<div class="list">${res.slice(0, 5).map(m => `<div class="li"><div><b>${esc(m.adversaire)}</b><br><small class="muted">${fmtDate(m.date)}</small></div><span class="score">${m.butsPour} – ${m.butsContre}</span></div>`).join("")}</div>` : empty("Aucun résultat")}</div>` : `<div class="card"><h3>Entraînements à venir</h3>${tr.length ? `<div class="list">${tr.map(t => `<div class="li"><div><b>${fmtDay(t.date)}</b><br><small class="muted">${[t.heure, t.lieu, t.theme].filter(Boolean).map(esc).join(" · ")}</small></div></div>`).join("")}</div>` : empty("Aucun entraînement programmé", "cone")}</div>`}
   </div>
   <div class="card" style="margin-top:16px"><h3>Résultats</h3>${res.length ? `<div class="list">${res.map(m => `<div class="li"><div><b>${esc(m.adversaire)}</b><br><small class="muted">${fmtDate(m.date)} · ${esc(m.competition || "")}</small></div><span><span class="score">${m.butsPour} – ${m.butsContre}</span> <span class="res ${result(m)}">${result(m)}</span></span></div>`).join("")}</div>` : empty("Aucun résultat")}</div>`;
 }
@@ -650,7 +744,7 @@ function vDash() {
     <div class="card kpi accent"><div class="lab">Effectif</div><div class="val">${S.players.length}</div><div class="sub">${act} actifs · ${inj.length} indisponible(s)</div></div>
     <div class="card kpi"><div class="lab">Bilan</div><div class="val">${b.V}<span class="muted" style="font-size:22px"> V </span>${b.N}<span class="muted" style="font-size:22px"> N </span>${b.D}<span class="muted" style="font-size:22px"> D</span></div><div class="sub">${b.J} match(s) joué(s) · ${b.pts} pts</div></div>
     <div class="card kpi"><div class="lab">Buts</div><div class="val">${b.BP} <span class="muted" style="font-size:22px">/ ${b.BC}</span></div><div class="sub">marqués / encaissés · diff. ${b.BP - b.BC >= 0 ? "+" : ""}${b.BP - b.BC}</div></div>
-    <div class="card kpi"><div class="lab">Caisse</div><div class="val" style="font-size:30px;color:${c.solde < 0 ? "var(--red)" : "inherit"}">${money(c.solde)}</div><div class="sub">${money(c.rec)} entrées · ${money(c.dep)} sorties</div></div>
+    ${IS_ADMIN ? `<div class="card kpi"><div class="lab">Caisse</div><div class="val" style="font-size:30px;color:${c.solde < 0 ? "var(--red)" : "inherit"}">${money(c.solde)}</div><div class="sub">${money(c.rec)} entrées · ${money(c.dep)} sorties</div></div>` : `<div class="card kpi"><div class="lab">Supporters</div><div class="val">${S.fansCount}</div><div class="sub">fans inscrits dans l'espace fans</div></div>`}
   </div>
   <div class="grid two" style="margin-top:16px">
     <div class="card next"><h3>Prochain match ${absNext.length ? `<span class="tag t-gold">${absNext.length} absent(s) signalé(s)</span>` : ""}</h3>
@@ -696,7 +790,7 @@ function vPlayers() {
     <div class="seg">${["Tous", ...POSTES].map(x => `<button class="${UI.pPoste === x ? "on" : ""}" onclick="UI.pPoste='${x}';render()">${x}</button>`).join("")}</div>
   </div>
   <div class="card wrap">${list.length ? `<table class="tbl"><thead><tr><th>Joueur</th><th>Poste</th><th class="hide-m">Âge</th><th class="hide-m">Téléphone</th><th>Statut</th><th class="hide-m">Cotisation</th><th class="num">Matchs</th><th class="num">Buts</th><th class="num hide-m">Présence</th><th></th></tr></thead><tbody>
-  ${list.map(p => `<tr><td><div class="who"><span class="jersey">${esc(p.numero || "–")}</span><div><b>${esc(p.prenom)} ${esc(p.nom)}</b>${linked.has(p.id) ? `<small>✓ accès à l'espace joueur</small>` : canWrite ? `<small><a href="#" onclick="event.preventDefault();openUserForm(null,'${p.id}')" style="color:var(--pri)">Créer son accès</a></small>` : ""}</div></div></td>
+  ${list.map(p => `<tr><td><div class="who">${avatar(p)}<div><b>${esc(p.prenom)} ${esc(p.nom)}</b>${linked.has(p.id) ? `<small>✓ accès à l'espace joueur</small>` : IS_ADMIN ? `<small><a href="#" onclick="event.preventDefault();openUserForm(null,'${p.id}')" style="color:var(--pri)">Créer son accès</a></small>` : ""}</div></div></td>
   <td>${esc(p.poste || "—")}</td><td class="hide-m">${age(p.naissance) !== "" ? age(p.naissance) + " ans" : "—"}</td><td class="hide-m">${esc(p.telephone || "—")}</td>
   <td>${stTag(p.statut)}</td><td class="hide-m"><span class="tag ${p.cotisation === "À jour" ? "t-green" : p.cotisation === "Exonéré" ? "t-grey" : "t-red"}">${esc(p.cotisation || "En retard")}</span></td>
   <td class="num">${mp[p.id] || 0}</td><td class="num"><b>${g[p.id] || 0}</b></td><td class="num hide-m">${pr.total ? Math.round((pr.by[p.id] || 0) / pr.total * 100) + "%" : "—"}</td>${actions("players", p.id)}</tr>`).join("")}
@@ -771,14 +865,17 @@ function vSettings() {
       <label class="flabel">Devise<input class="input" name="devise" value="${esc(s.devise)}" ${dis}></label>
       <label class="flabel">Stade / terrain habituel<input class="input" name="stade" value="${esc(s.stade)}" ${dis}></label>
       <label class="flabel">Cotisation annuelle (montant)<input class="input" type="number" min="0" name="cotisation" value="${esc(s.cotisation)}" ${dis}></label>
+      <label class="flabel" style="grid-column:1/-1;flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" name="fansOuverts" style="width:auto" ${s.fansOuverts !== false ? "checked" : ""} ${dis}> Inscriptions ouvertes dans l'espace fans</label>
       ${canWrite ? `<div style="grid-column:1/-1"><button class="btn">Enregistrer</button></div>` : ""}
     </form>
   </div>
   <div class="card" style="max-width:640px;margin-top:16px">
     <h3>Comptes d'accès <button class="btn sm" onclick="openUserForm()">${I.plus} Nouveau compte</button></h3>
-    <p class="muted" style="margin:0 0 10px">Créez un compte pour chaque joueur (relié à sa fiche) et pour les membres du staff qui gèrent le club. Communiquez-leur l'identifiant et le mot de passe : ils pourront changer leur mot de passe ensuite.</p>
+    <p class="muted" style="margin:0 0 10px"><b>Administrateur</b> : tout, y compris finances, comptes et paramètres. <b>Dirigeant</b> : gère joueurs, matchs, entraînements, annonces, absences et bibliothèque, sans les finances ni les comptes. <b>Joueur</b> : son espace personnel. <b>Supporter</b> : s'inscrit seul depuis l'espace fans.</p>
+    <div class="toolbar"><div class="seg"><button class="${UI.uFilter === "equipe" ? "on" : ""}" onclick="UI.uFilter='equipe';render()">Direction et joueurs (${S.users.filter(u => u.role !== "fan").length})</button><button class="${UI.uFilter === "fans" ? "on" : ""}" onclick="UI.uFilter='fans';render()">Supporters (${S.users.filter(u => u.role === "fan").length})</button></div>
+    ${UI.uFilter === "fans" ? `<input class="input search" id="uSearch" placeholder="Nom ou téléphone…" value="${esc(UI.uSearch)}" oninput="UI.uSearch=this.value;render()">` : ""}</div>
     ${usersTable()}
-    <div style="margin-top:12px"><button class="btn ghost" onclick="togglePreview()">${I.eye} Voir l'espace joueur</button></div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" onclick="setPreview('joueur')">${I.eye} Voir l'espace joueur</button><button class="btn ghost" onclick="setPreview('fan')">${I.eye} Voir l'espace fans</button></div>
   </div>
   <div class="card" style="max-width:640px;margin-top:16px">
     <h3>Application mobile et ordinateur</h3>
@@ -791,12 +888,18 @@ function vSettings() {
     <div style="margin-top:12px"><button class="btn ghost" onclick="copyExport()">Copier une sauvegarde (JSON)</button></div>
   </div>`;
 }
-function saveSettingsForm(f) { const d = Object.fromEntries(new FormData(f)); d.cotisation = +d.cotisation || 0; saveSettings(d); toast("Paramètres enregistrés"); }
+function saveSettingsForm(f) { const d = Object.fromEntries(new FormData(f)); d.cotisation = +d.cotisation || 0; d.fansOuverts = f.fansOuverts.checked; saveSettings(d); toast("Paramètres enregistrés"); }
+const roleTag = r => `<span class="tag ${({ admin: "t-pri", dirigeant: "t-blue", joueur: "t-green", fan: "t-gold" })[r] || "t-grey"}">${esc(ROLE_LABEL[r] || r)}</span>`;
+const fmtPhone = t => { t = String(t || ""); return t.startsWith("223") && t.length === 11 ? "+223 " + t.slice(3).replace(/(\d{2})(?=\d)/g, "$1 ") : t ? "+" + t : ""; };
 function usersTable() {
-  const us = [...S.users].sort((a, b) => (a.role === b.role ? a.username.localeCompare(b.username) : a.role === "admin" ? -1 : 1));
-  if (!us.length) return "";
-  return `<div class="wrap" style="border:1px solid var(--line);border-radius:10px"><table class="tbl"><thead><tr><th>Identifiant</th><th>Rôle</th><th>Fiche joueur</th><th></th></tr></thead><tbody>${us.map(u => `<tr><td><b>${esc(u.username)}</b>${u.nom ? `<br><small class="muted">${esc(u.nom)}</small>` : ""}</td><td>${u.role === "admin" ? '<span class="tag t-pri">Administration</span>' : '<span class="tag t-green">Joueur</span>'}</td><td>${u.role === "joueur" ? (pById(u.playerId) ? esc(pName(u.playerId)) : '<span class="tag t-red">Non reliée</span>') : "—"}</td>
-  <td class="act"><button class="icon-btn" title="Modifier" onclick="openUserForm('${u.id}')">${I.edit}</button>${u.id !== MY_ID ? `<button class="icon-btn" title="Supprimer" onclick="askDeleteUser('${u.id}')">${I.trash}</button>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
+  const order = { admin: 0, dirigeant: 1, joueur: 2, fan: 3 };
+  let us = S.users.filter(u => UI.uFilter === "fans" ? u.role === "fan" : u.role !== "fan");
+  if (UI.uFilter === "fans" && UI.uSearch) { const q = UI.uSearch.toLowerCase().replace(/\s/g, ""); us = us.filter(u => (u.nom || "").toLowerCase().replace(/\s/g, "").includes(q) || (u.telephone || "").includes(q)); }
+  us.sort((a, b) => order[a.role] - order[b.role] || (a.nom || a.username).localeCompare(b.nom || b.username));
+  if (!us.length) return `<div class="empty" style="padding:16px">${UI.uFilter === "fans" ? "Aucun supporter inscrit pour l'instant." : "Aucun compte."}</div>`;
+  const shown = us.slice(0, 200);
+  return `<div class="wrap" style="border:1px solid var(--line);border-radius:10px"><table class="tbl"><thead><tr><th>${UI.uFilter === "fans" ? "Supporter" : "Identifiant"}</th><th>Rôle</th><th>${UI.uFilter === "fans" ? "Téléphone" : "Fiche joueur / téléphone"}</th><th></th></tr></thead><tbody>${shown.map(u => `<tr><td><b>${esc(u.role === "fan" ? u.nom || "Supporter" : u.username)}</b>${u.nom && u.role !== "fan" ? `<br><small class="muted">${esc(u.nom)}</small>` : ""}</td><td>${roleTag(u.role)}</td><td>${u.role === "joueur" ? (pById(u.playerId) ? esc(pName(u.playerId)) : '<span class="tag t-red">Non reliée</span>') : esc(fmtPhone(u.telephone)) || "—"}</td>
+  <td class="act"><button class="icon-btn" title="Modifier" onclick="openUserForm('${u.id}')">${I.edit}</button>${u.id !== MY_ID ? `<button class="icon-btn" title="Supprimer" onclick="askDeleteUser('${u.id}')">${I.trash}</button>` : ""}</td></tr>`).join("")}</tbody></table></div>${us.length > shown.length ? `<p class="muted" style="font-size:12.5px">${us.length - shown.length} autres : utilisez la recherche.</p>` : ""}`;
 }
 const suggestLogin = p => (p.prenom + "." + p.nom).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9.]/g, "").slice(0, 32);
 const randomPass = () => { const c = "abcdefghjkmnpqrstuvwxyz23456789"; let s = ""; const a = new Uint32Array(8); crypto.getRandomValues(a); a.forEach(x => s += c[x % c.length]); return s; };
@@ -807,17 +910,18 @@ function openUserForm(id, playerId) {
   const role = u ? u.role : "joueur", pid = u ? u.playerId : (p ? p.id : "");
   $("#modal").innerHTML = `<form onsubmit="event.preventDefault();submitUser(this,'${id || ""}')"><header><h2>${u ? "Modifier le compte" : "Nouveau compte"}</h2><button type="button" class="icon-btn" onclick="closeModal()">${I.x}</button></header>
   <div class="body">
-    <label>Rôle<select class="input" name="role" ${u && u.id === MY_ID ? "disabled" : ""} onchange="document.getElementById('pidL').style.display=this.value==='joueur'?'':'none'"><option value="joueur" ${role === "joueur" ? "selected" : ""}>Joueur</option><option value="admin" ${role === "admin" ? "selected" : ""}>Administration</option></select></label>
+    <label>Rôle<select class="input" name="role" ${u && u.id === MY_ID ? "disabled" : ""} onchange="document.getElementById('pidL').style.display=this.value==='joueur'?'':'none'">${["joueur", "dirigeant", "admin", "fan"].map(r => `<option value="${r}" ${role === r ? "selected" : ""}>${ROLE_LABEL[r]}</option>`).join("")}</select></label>
     <label id="pidL" style="${role === "joueur" ? "" : "display:none"}">Fiche joueur<select class="input" name="playerId" onchange="if(!this.form.username.disabled&&!this.form.username.value){const p=S.players.find(x=>x.id===this.value);if(p)this.form.username.value=suggestLogin(p)}"><option value="">— Choisir —</option>${free.map(x => `<option value="${x.id}" ${x.id === pid ? "selected" : ""}>${esc(x.prenom)} ${esc(x.nom)}</option>`).join("")}</select></label>
     <label>Identifiant *<input class="input" name="username" required value="${esc(u ? u.username : p ? suggestLogin(p) : "")}" ${u ? "disabled" : ""} pattern="[a-z0-9._-]{3,32}" title="3 à 32 caractères : lettres minuscules, chiffres, . _ -"></label>
     <label>Nom affiché<input class="input" name="nom" value="${esc(u ? u.nom : p ? p.prenom + " " + p.nom : "")}"></label>
+    <label>Téléphone (facultatif, permet de se connecter avec)<input class="input" name="telephone" type="tel" value="${esc(u && u.telephone ? fmtPhone(u.telephone) : "")}" placeholder="Ex. 76 12 34 56"></label>
     <label class="full">${u ? "Nouveau mot de passe (laisser vide pour ne pas changer)" : "Mot de passe *"}<div style="display:flex;gap:6px"><input class="input" name="password" ${u ? "" : "required"} minlength="6" value="${u ? "" : randomPass()}"><button type="button" class="btn ghost sm" onclick="this.previousElementSibling.value=randomPass()">Générer</button></div></label>
     <p class="full muted" style="margin:0;font-size:12.5px">Notez le mot de passe avant d'enregistrer : il ne pourra plus être affiché ensuite.</p>
   </div><footer><button type="button" class="btn ghost" onclick="closeModal()">Annuler</button><button class="btn">Enregistrer</button></footer></form>`;
   $("#ov").classList.add("open");
 }
 async function submitUser(f, id) {
-  const d = { role: f.role.value, playerId: f.role.value === "joueur" ? f.playerId.value : "", nom: f.nom.value.trim() };
+  const d = { role: f.role.value, playerId: f.role.value === "joueur" ? f.playerId.value : "", nom: f.nom.value.trim(), telephone: f.telephone.value.trim() };
   if (f.password.value) d.password = f.password.value;
   if (!id) d.username = f.username.value.trim().toLowerCase();
   const login = d.username || (S.users.find(u => u.id === id) || {}).username, pw = d.password;
@@ -847,13 +951,21 @@ async function deleteUser(id) { try { await api("DELETE", "users/" + id); closeM
 function openMyAccount() {
   if (!ME) return;
   $("#modal").innerHTML = `<form onsubmit="event.preventDefault();changePass(this)"><header><h2>Mon compte</h2><button type="button" class="icon-btn" onclick="closeModal()">${I.x}</button></header>
-  <div class="body"><p class="full" style="margin:0">Connecté en tant que <b>${esc(ME.username)}</b> (${ME.role === "admin" ? "administration" : "joueur"}).</p>
+  <div class="body"><p class="full" style="margin:0">Connecté en tant que <b>${esc(ME.role === "fan" ? (ME.nom || "Supporter") + " · " + fmtPhone(ME.telephone) : ME.username)}</b> (${esc(ROLE_LABEL[ME.role] || "")}).</p>
   <label class="full">Mot de passe actuel<input class="input" type="password" name="ancien" required autocomplete="current-password"></label>
   <label>Nouveau mot de passe<input class="input" type="password" name="nouveau" required minlength="6" autocomplete="new-password"></label>
-  <label>Confirmer<input class="input" type="password" name="confirm" required minlength="6" autocomplete="new-password"></label></div>
+  <label>Confirmer<input class="input" type="password" name="confirm" required minlength="6" autocomplete="new-password"></label>
+  ${ME.role === "fan" ? `<p class="full" style="margin:0;font-size:12.5px"><a href="#" style="color:var(--red)" onclick="event.preventDefault();askDeleteMe()">Supprimer mon compte fan</a></p>` : ""}</div>
   <footer><button type="button" class="btn ghost" onclick="logout()">Se déconnecter</button><button class="btn">Changer le mot de passe</button></footer></form>`;
   $("#ov").classList.add("open");
 }
+function askDeleteMe() {
+  $("#modal").innerHTML = `<header><h2>Supprimer mon compte ?</h2><button class="icon-btn" onclick="closeModal()">${I.x}</button></header>
+  <div class="body"><p class="full" style="margin:0">Votre compte fan et votre numéro seront effacés. Vous pourrez vous réinscrire plus tard.</p></div>
+  <footer><button class="btn ghost" onclick="closeModal()">Annuler</button><button class="btn danger" onclick="deleteMe()">Supprimer</button></footer>`;
+  $("#ov").classList.add("open");
+}
+async function deleteMe() { try { await api("DELETE", "mon-compte"); closeModal(); ME = null; showLogin(); toast("Compte supprimé"); } catch (e) { apiErr(e); } }
 async function changePass(f) {
   if (f.nouveau.value !== f.confirm.value) { toast("Les deux mots de passe ne correspondent pas"); return; }
   try { await api("POST", "password", { ancien: f.ancien.value, nouveau: f.nouveau.value }); closeModal(); toast("Mot de passe modifié"); } catch (e) { apiErr(e); }
@@ -878,7 +990,8 @@ function openForm(col, id) {
       field("Numéro de maillot", inp("numero", p.numero, "number", 'min="1" max="99"')) + field("Poste", `<select class="input" name="poste">${opt(POSTES, p.poste)}</select>`) +
       field("Date de naissance", inp("naissance", p.naissance, "date")) + field("Téléphone", inp("telephone", p.telephone, "tel")) +
       field("Statut", `<select class="input" name="statut">${opt(STATUTS, p.statut)}</select>`) + field("Cotisation", `<select class="input" name="cotisation">${opt(["À jour", "En retard", "Exonéré"], p.cotisation)}</select>`) +
-      field("Notes", `<textarea class="input" name="notes" rows="2">${esc(p.notes || "")}</textarea>`, true);
+      field("Notes", `<textarea class="input" name="notes" rows="2">${esc(p.notes || "")}</textarea>`, true) +
+      photoField(p.photo, 700);
   }
   if (col === "matches") {
     const m = it || { date: today(), lieu: "Domicile", competition: "Championnat", stade: S.settings.stade, buteurs: [], convoques: [] };
@@ -907,12 +1020,42 @@ function openForm(col, id) {
       field("Libellé", inp("libelle", f.libelle, "text", 'placeholder="Ex : Achat de ballons"'), true) +
       field("Joueur concerné (facultatif)", `<select class="input" name="playerId">${playerOpts(f.playerId)}</select>`, true);
   }
+  if (col === "histoire") {
+    const x = it || { annee: new Date().getFullYear() };
+    title = it ? "Modifier l'étape" : "Nouvelle étape du parcours";
+    body = field("Année *", inp("annee", x.annee, "number", 'required min="1900" max="2100"')) + field("Date précise (facultatif)", inp("periode", x.periode, "text", 'placeholder="Ex. 12 mars"')) +
+      field("Titre *", inp("titre", x.titre, "text", 'required placeholder="Ex. Fondation du club"'), true) +
+      field("Récit", `<textarea class="input" name="texte" rows="5">${esc(x.texte || "")}</textarea>`, true) + photoField(x.photo, 1280);
+  }
+  if (col === "trophees") {
+    const x = it || { rang: "Vainqueur" };
+    title = it ? "Modifier le trophée" : "Nouveau trophée";
+    body = field("Titre *", inp("titre", x.titre, "text", 'required placeholder="Ex. Coupe du district"'), true) +
+      field("Compétition", inp("competition", x.competition)) + field("Saison / année *", inp("saison", x.saison, "text", 'required placeholder="Ex. 2024-2025"')) +
+      field("Résultat", `<select class="input" name="rang">${opt(["Vainqueur", "Finaliste", "3e place", "Distinction", "Autre"], x.rang)}</select>`) + field("Ordre d'affichage", inp("ordre", x.ordre, "number", 'placeholder="1 = en premier"')) +
+      field("Description", `<textarea class="input" name="description" rows="3">${esc(x.description || "")}</textarea>`, true) + photoField(x.photo, 1000);
+  }
+  if (col === "membres") {
+    const x = it || { fonction: "Dirigeant" };
+    title = it ? "Modifier le membre" : "Nouveau membre du club";
+    body = field("Nom et prénom *", inp("nom", x.nom, "text", "required"), true) +
+      field("Fonction", `<select class="input" name="fonction">${opt(FONCTIONS, x.fonction)}</select>`) + field("Précision (facultatif)", inp("fonctionLibre", x.fonctionLibre, "text", 'placeholder="Ex. Chargé de communication"')) +
+      field("Ordre d'affichage", inp("ordre", x.ordre, "number", 'placeholder="1 = en premier"')) + field("Depuis (année)", inp("depuis", x.depuis, "number", 'min="1900" max="2100"')) +
+      field("Présentation", `<textarea class="input" name="bio" rows="3">${esc(x.bio || "")}</textarea>`, true) + photoField(x.photo, 700);
+  }
+  if (col === "galerie") {
+    const x = it || { categorie: "Matchs", date: today() };
+    title = "Modifier la photo";
+    body = `<div class="full" style="text-align:center">${x.photo ? `<img src="/media/${esc(x.photo)}" style="max-width:100%;max-height:260px;border-radius:10px" alt="">` : ""}</div><input type="hidden" name="photo" value="${esc(x.photo || "")}">` +
+      field("Légende", inp("legende", x.legende), true) + field("Catégorie", `<select class="input" name="categorie">${opt(GAL_CATS, x.categorie)}</select>`) + field("Date", inp("date", x.date, "date"));
+  }
   if (col === "annonces") {
     const a = it || { priorite: "Info" };
     title = it ? "Modifier l'annonce" : "Nouvelle annonce";
     body = field("Titre *", inp("titre", a.titre, "text", 'required placeholder="Ex : Convocation pour le match de samedi"'), true) +
       field("Priorité", `<select class="input" name="priorite">${opt(PRIOS, a.priorite)}</select>`, true) +
-      field("Message *", `<textarea class="input" name="message" rows="6" required>${esc(a.message || "")}</textarea>`, true);
+      field("Message *", `<textarea class="input" name="message" rows="6" required>${esc(a.message || "")}</textarea>`, true) +
+      `<label class="full" style="flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" name="public" style="width:auto" ${a.public ? "checked" : ""}> Annonce publique : visible aussi par les fans</label>`;
   }
   $("#modal").innerHTML = `<form onsubmit="event.preventDefault();submitForm(this)"><header><h2>${title}</h2><button type="button" class="icon-btn" onclick="closeModal()">${I.x}</button></header>
     <div class="body">${body}</div><footer><button type="button" class="btn ghost" onclick="closeModal()">Annuler</button><button class="btn">${col === "annonces" && !it ? "Publier" : "Enregistrer"}</button></footer></form>`;
@@ -930,6 +1073,7 @@ function submitForm(f) {
   const fd = new FormData(f), d = {};
   for (const [k, v] of fd.entries()) if (!["convoques", "presents", "sc_p", "sc_n"].includes(k)) d[k] = typeof v === "string" ? v.trim() : v;
   const { col, id } = FORM; const prev = id ? S[col].find(x => x.id === id) : {};
+  if (window._uploading) { toast("Patientez, la photo est en cours d'envoi…"); return; }
   const obj = { ...prev, ...d, id: id || uid(), updatedAt: nowIso() };
   if (!id) obj.createdAt = obj.updatedAt;
   if (col === "matches") {
@@ -941,14 +1085,148 @@ function submitForm(f) {
   if (col === "trainings") obj.presents = fd.getAll("presents");
   if (col === "finances") obj.montant = +obj.montant || 0;
   if (col === "annonces" && !id) obj.date = obj.createdAt;
+  if (col === "annonces") obj.public = fd.has("public");
   saveItem(col, obj); closeModal(); toast(col === "annonces" && !id ? "Annonce publiée" : "Enregistré");
 }
 function askDelete(col, id) {
-  const lab = { players: "ce joueur", matches: "ce match", trainings: "cette séance", finances: "cette opération", annonces: "cette annonce" }[col];
+  const lab = { players: "ce joueur", matches: "ce match", trainings: "cette séance", finances: "cette opération", annonces: "cette annonce", histoire: "cette étape", trophees: "ce trophée", membres: "ce membre", galerie: "cette photo" }[col];
   $("#modal").innerHTML = `<header><h2>Supprimer ${lab} ?</h2><button class="icon-btn" onclick="closeModal()">${I.x}</button></header>
   <div class="body"><p class="full" style="margin:0">Cette action est définitive.</p></div>
   <footer><button class="btn ghost" onclick="closeModal()">Annuler</button><button class="btn danger" onclick="removeItem('${col}','${id}');closeModal();toast('Supprimé')">Supprimer</button></footer>`;
   $("#ov").classList.add("open");
+}
+
+/* ================= Photos ================= */
+const avatar = (p, size = 32) => p && p.photo ? `<img class="avatar" style="width:${size}px;height:${size}px" src="/media/${esc(p.photo)}" alt="" loading="lazy">` : `<span class="jersey" style="width:${size}px;height:${size}px">${esc(p && p.numero || "–")}</span>`;
+function photoField(id, maxDim) {
+  return `<div class="full"><div class="flabel" style="margin-bottom:6px">Photo</div><div class="photo-field"><div class="pv">${id ? `<img src="/media/${esc(id)}" alt="">` : "Aucune photo"}</div>
+  <div style="display:flex;flex-direction:column;gap:6px"><button type="button" class="btn ghost sm" onclick="choosePhoto(this,${maxDim})">${I.img.replace("<svg", '<svg width="15" height="15"')} ${id ? "Changer la photo" : "Choisir une photo"}</button>${id ? `<button type="button" class="btn ghost sm" onclick="clearPhoto(this)">Retirer la photo</button>` : ""}<small class="muted">Photo du téléphone ou de l'ordinateur. Elle est réduite automatiquement.</small></div>
+  <input type="hidden" name="photo" value="${esc(id || "")}"></div></div>`;
+}
+function clearPhoto(btn) { const w = btn.closest(".photo-field"); w.querySelector("input[name=photo]").value = ""; w.querySelector(".pv").innerHTML = "Aucune photo"; btn.remove(); }
+function pickFiles(multiple) {
+  return new Promise(res => { const i = document.createElement("input"); i.type = "file"; i.accept = "image/*"; i.multiple = !!multiple; i.onchange = () => res([...i.files]); i.click(); });
+}
+async function compressImage(file, maxDim) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((ok, ko) => { const im = new Image(); im.onload = () => ok(im); im.onerror = ko; im.src = url; });
+    const k = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+    let q = 0.82, out = c.toDataURL("image/jpeg", q);
+    while (out.length > 1.9e6 && q > 0.4) { q -= 0.12; out = c.toDataURL("image/jpeg", q); }
+    return out;
+  } finally { URL.revokeObjectURL(url); }
+}
+async function uploadImage(file, maxDim) { const data = await compressImage(file, maxDim); return (await api("POST", "media", { data })).id; }
+async function choosePhoto(btn, maxDim) {
+  const [file] = await pickFiles(false); if (!file) return;
+  const w = btn.closest(".photo-field"), pv = w.querySelector(".pv");
+  pv.innerHTML = "Envoi…"; window._uploading = true; btn.disabled = true;
+  try { const id = await uploadImage(file, maxDim); w.querySelector("input[name=photo]").value = id; pv.innerHTML = `<img src="/media/${esc(id)}" alt="">`; }
+  catch (e) { pv.innerHTML = "Échec"; apiErr(e.status ? e : { message: "Image illisible. Essayez une photo JPEG ou PNG.", status: 1 }); }
+  window._uploading = false; btn.disabled = false;
+}
+
+/* ================= Bibliothèque ================= */
+const FONCTIONS = ["Président", "Vice-président", "Secrétaire général", "Trésorier", "Dirigeant", "Entraîneur principal", "Entraîneur adjoint", "Entraîneur des gardiens", "Préparateur physique", "Médecin / Kiné", "Intendant", "Communication", "Autre"];
+const GAL_CATS = ["Matchs", "Entraînements", "Événements", "Membres", "Trophées", "Autre"];
+const LIB_TABS = [["histoire", "Parcours"], ["trophees", "Trophées"], ["membres", "Membres du club"], ["galerie", "Galerie photos"]];
+const libEdit = (col, id) => canWrite && isAdminView() ? `<div class="ft"><button class="icon-btn" title="Modifier" onclick="openForm('${col}','${id}')">${I.edit}</button><button class="icon-btn" title="Supprimer" onclick="askDelete('${col}','${id}')">${I.trash}</button></div>` : "";
+const photoOr = (id, ic) => id ? `<img src="/media/${esc(id)}" alt="" loading="lazy">` : I[ic];
+function vLibrary() {
+  const tab = LIB_TABS.some(t => t[0] === UI.lib) ? UI.lib : "histoire";
+  const edit = canWrite && isAdminView();
+  const addBtn = { histoire: `<button class="btn" onclick="openForm('histoire')">${I.plus} Ajouter une étape</button>`, trophees: `<button class="btn" onclick="openForm('trophees')">${I.plus} Ajouter un trophée</button>`, membres: `<button class="btn" onclick="openForm('membres')">${I.plus} Ajouter un membre</button>`, galerie: `<button class="btn gold" onclick="addGalleryPhotos()">${I.plus} Ajouter des photos</button>` }[tab];
+  let body = "";
+  if (tab === "histoire") {
+    const list = [...S.histoire].sort((a, b) => (+a.annee || 0) - (+b.annee || 0) || (a.createdAt || "").localeCompare(b.createdAt || ""));
+    window._hist = list.filter(x => x.photo).map(x => ({ photo: x.photo, legende: x.annee + " · " + x.titre }));
+    body = list.length ? `<div class="timeline">${list.map(x => `<div class="tl"><div class="card"><div><div class="yr">${esc(x.annee)}${x.periode ? ` <small class="muted" style="font-size:14px;font-family:Inter">${esc(x.periode)}</small>` : ""}</div><h3 style="margin:6px 0 4px">${esc(x.titre)}</h3><p style="margin:0;white-space:pre-wrap">${esc(x.texte || "")}</p>${edit ? `<div style="margin-top:8px">${libEdit("histoire", x.id).replace('class="ft"', 'style="display:flex"')}</div>` : ""}</div>${x.photo ? `<img src="/media/${esc(x.photo)}" alt="" loading="lazy" onclick="openLb(window._hist,${window._hist.findIndex(y => y.photo === x.photo)})" style="cursor:pointer">` : ""}</div></div>`).join("")}</div>` : `<div class="card">${empty("Le parcours du club n'est pas encore raconté." + (edit ? " Ajoutez la première étape : la fondation de l'AFM en 2021 !" : ""), "book")}</div>`;
+  }
+  if (tab === "trophees") {
+    const list = [...S.trophees].sort((a, b) => (+a.ordre || 999) - (+b.ordre || 999) || String(b.saison || "").localeCompare(String(a.saison || "")));
+    body = list.length ? `<div class="pill-stats" style="margin-bottom:14px"><div><b>${list.filter(x => x.rang === "Vainqueur").length}</b><span>titre(s)</span></div><div><b>${list.length}</b><span>distinction(s) au total</span></div></div>
+    <div class="lib-grid">${list.map(x => `<div class="lcardx"><div class="ph">${photoOr(x.photo, "trophy")}</div><div class="bd"><span class="tag ${x.rang === "Vainqueur" ? "t-gold" : "t-pri"}" style="align-self:flex-start">${esc(x.rang || "")}</span><b>${esc(x.titre)}</b><small class="muted">${esc([x.competition, x.saison].filter(Boolean).join(" · "))}</small>${x.description ? `<p>${esc(x.description)}</p>` : ""}</div>${libEdit("trophees", x.id)}</div>`).join("")}</div>` : `<div class="card">${empty("Aucun trophée enregistré pour l'instant.", "trophy")}</div>`;
+  }
+  if (tab === "membres") {
+    const list = [...S.membres].sort((a, b) => (+a.ordre || 999) - (+b.ordre || 999) || FONCTIONS.indexOf(a.fonction) - FONCTIONS.indexOf(b.fonction));
+    body = list.length ? `<div class="lib-grid">${list.map(x => `<div class="lcardx mem"><div class="ph">${photoOr(x.photo, "users")}</div><div class="bd"><b>${esc(x.nom)}</b><span class="tag t-pri" style="align-self:flex-start">${esc(x.fonctionLibre || x.fonction || "")}</span>${x.depuis ? `<small class="muted">Au club depuis ${esc(x.depuis)}</small>` : ""}${x.bio ? `<p>${esc(x.bio)}</p>` : ""}</div>${libEdit("membres", x.id)}</div>`).join("")}</div>` : `<div class="card">${empty("Présentez ici les dirigeants et le staff technique du club.", "users")}</div>`;
+  }
+  if (tab === "galerie") {
+    const all = [...S.galerie].sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.createdAt || "").localeCompare(a.createdAt || ""));
+    const cats = ["Toutes", ...GAL_CATS.filter(c => all.some(x => x.categorie === c))];
+    const list = UI.galCat === "Toutes" ? all : all.filter(x => x.categorie === UI.galCat);
+    window._gal = list;
+    body = (all.length ? `<div class="toolbar"><div class="seg">${cats.map(c => `<button class="${UI.galCat === c ? "on" : ""}" onclick="UI.galCat='${c}';render()">${c}</button>`).join("")}</div><span class="muted">${list.length} photo(s)</span></div>` : "") +
+      (list.length ? `<div class="gal">${list.map((x, i) => `<div class="gi" onclick="openLb(window._gal,${i})"><img src="/media/${esc(x.photo)}" alt="" loading="lazy">${x.legende ? `<span>${esc(x.legende)}</span>` : ""}</div>`).join("")}</div>` : `<div class="card">${empty("Aucune photo pour l'instant.", "img")}</div>`);
+  }
+  return head(VIEW() === "fan" ? "Le club" : "Bibliothèque", "L'histoire, les trophées, les membres et les photos de l'AFM", addBtn) +
+    `<div class="toolbar"><div class="seg">${LIB_TABS.map(([k, l]) => `<button class="${tab === k ? "on" : ""}" onclick="UI.lib='${k}';render()">${l}</button>`).join("")}</div></div>` + body;
+}
+async function addGalleryPhotos() {
+  const files = await pickFiles(true); if (!files.length) return;
+  const cat = UI.galCat !== "Toutes" ? UI.galCat : "Matchs";
+  let ok = 0;
+  for (const [i, f] of files.entries()) {
+    toast(`Envoi de la photo ${i + 1} / ${files.length}…`);
+    try { const id = await uploadImage(f, 1600); const now = nowIso(); const doc = { id: uid(), photo: id, legende: "", categorie: cat, date: today(), createdAt: now, updatedAt: now }; S.galerie.push(doc); await api("PUT", `data/galerie/${doc.id}`, doc); ok++; }
+    catch (e) { apiErr(e.status ? e : { message: "Une image n'a pas pu être envoyée", status: 1 }); }
+  }
+  bumpVersion(); render(); toast(`${ok} photo(s) ajoutée(s). Cliquez sur une photo pour ajouter une légende.`);
+}
+/* Visionneuse */
+let LB = { list: [], i: 0 };
+function openLb(list, i) { LB = { list, i }; showLb(); $("#lb").classList.add("open"); }
+function showLb() {
+  const x = LB.list[LB.i]; if (!x) return;
+  $("#lbImg").src = "/media/" + x.photo;
+  const edit = canWrite && isAdminView() && x.id && S.galerie.some(g => g.id === x.id);
+  $("#lbCap").innerHTML = `${esc(x.legende || "")}${x.date ? ` <small style="opacity:.7">· ${fmtDate(x.date)}</small>` : ""}${edit ? `<div style="margin-top:8px;display:flex;gap:8px;justify-content:center"><button class="btn sm gold" onclick="closeLb();openForm('galerie','${x.id}')">Modifier la légende</button><button class="btn sm danger" onclick="closeLb();askDelete('galerie','${x.id}')">Supprimer</button></div>` : ""}`;
+  document.querySelectorAll("#lb .nav-l,#lb .nav-r").forEach(b => b.style.display = LB.list.length > 1 ? "" : "none");
+}
+function lbStep(d) { LB.i = (LB.i + d + LB.list.length) % LB.list.length; showLb(); }
+function closeLb() { $("#lb").classList.remove("open"); }
+document.addEventListener("keydown", e => { if (!$("#lb").classList.contains("open")) return; if (e.key === "Escape") closeLb(); if (e.key === "ArrowLeft") lbStep(-1); if (e.key === "ArrowRight") lbStep(1); });
+
+/* ================= Espace fans ================= */
+function vFHome() {
+  const nx = upcomingMatches()[0]; const nom = esc(S.settings.nom || "AFM");
+  const last = sortedMatches().filter(isPlayed).reverse().slice(0, 4);
+  const ann = sortedAnn().slice(0, 3); const b = bilan();
+  const gal = [...S.galerie].sort((a, c) => (c.date || "").localeCompare(a.date || "")).slice(0, 6); window._galHome = gal;
+  const tro = S.trophees.filter(x => x.rang === "Vainqueur").length;
+  return `<div class="hero"><img src="logo.png" alt=""><div><h1>${PREVIEW ? "Bienvenue, supporter !" : "Bienvenue " + esc((ME.nom || "").split(" ")[0]) + " !"}</h1><p>Espace fans · ${nom} · Saison ${esc(S.settings.saison || "")}</p></div></div>
+  <div class="grid kpis" style="margin-bottom:16px">
+    <div class="card kpi accent"><div class="lab">Bilan de la saison</div><div class="val">${b.V}<span style="font-size:20px;opacity:.7"> V </span>${b.N}<span style="font-size:20px;opacity:.7"> N </span>${b.D}<span style="font-size:20px;opacity:.7"> D</span></div><div class="sub">${b.J} match(s) joué(s)</div></div>
+    <div class="card kpi"><div class="lab">Buts marqués</div><div class="val">${b.BP}</div><div class="sub">${b.BC} encaissé(s)</div></div>
+    <div class="card kpi"><div class="lab">Effectif</div><div class="val">${S.players.length}</div><div class="sub">joueurs</div></div>
+    <div class="card kpi"><div class="lab">Titres</div><div class="val">${tro}</div><div class="sub"><a href="#bibliotheque" onclick="UI.lib='trophees'" style="color:var(--pri)">Voir les trophées</a></div></div>
+  </div>
+  <div class="grid two">
+    <div class="card next"><h3>Prochain match</h3>
+      ${nx ? `<div class="vs"><div class="team">${nx.lieu === "Extérieur" ? esc(nx.adversaire) : nom}</div><div class="vsb">VS</div><div class="team">${nx.lieu === "Extérieur" ? nom : esc(nx.adversaire)}</div></div><div class="meta">${fmtDay(nx.date)}${nx.heure ? " · " + esc(nx.heure) : ""} · ${esc(nx.competition || "")}${nx.stade ? " · " + esc(nx.stade) : ""}</div>` : `<div class="meta" style="padding:26px 0">Aucun match programmé pour le moment.</div>`}
+    </div>
+    <div class="card"><h3>Derniers résultats <span class="form-strip">${last.slice().reverse().map(m => `<span class="res ${result(m)}">${result(m)}</span>`).join("")}</span></h3>
+      ${last.length ? `<div class="list">${last.map(m => `<div class="li"><div><b>${esc(m.adversaire)}</b><br><small class="muted">${fmtDate(m.date)} · ${esc(m.competition || "")}</small></div><span class="score">${m.butsPour} – ${m.butsContre}</span></div>`).join("")}</div>` : empty("Aucun résultat pour l'instant")}
+    </div>
+  </div>
+  <div class="grid two" style="margin-top:16px">
+    <div class="card"><h3>Actualités <a href="#annonces" class="muted" style="font-size:13px;font-family:Inter">Tout voir</a></h3>
+      ${ann.length ? `<div class="list">${ann.map(a => `<a class="li" href="#annonces" style="text-decoration:none;color:inherit"><div><b>${esc(a.titre)}</b><br><small class="muted">${ago(a.date)}</small></div></a>`).join("")}</div>` : empty("Aucune actualité", "mega")}
+    </div>
+    <div class="card"><h3>Dernières photos <a href="#bibliotheque" onclick="UI.lib='galerie'" class="muted" style="font-size:13px;font-family:Inter">Galerie</a></h3>
+      ${gal.length ? `<div class="gal" style="grid-template-columns:repeat(3,1fr)">${gal.map((x, i) => `<div class="gi" onclick="openLb(window._galHome,${i})"><img src="/media/${esc(x.photo)}" alt="" loading="lazy"></div>`).join("")}</div>` : empty("Pas encore de photos", "img")}
+    </div>
+  </div>`;
+}
+function vFEffectif() {
+  const g = goalsBy();
+  const groups = POSTES.map(po => [po, S.players.filter(p => p.poste === po && p.statut !== "Inactif").sort((a, b) => (+a.numero || 99) - (+b.numero || 99))]).filter(x => x[1].length);
+  const plural = { Gardien: "Gardiens", "Défenseur": "Défenseurs", Milieu: "Milieux", Attaquant: "Attaquants" };
+  return `<div class="top"><div><h1>Effectif</h1><p>Les joueurs de l'AFM · saison ${esc(S.settings.saison || "")}</p></div></div>` +
+    (groups.length ? groups.map(([po, ps]) => `<h2 style="margin:18px 0 10px;font-size:22px">${plural[po] || po}</h2><div class="lib-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">${ps.map(p => `<div class="pcard"><div class="ph">${p.photo ? `<img src="/media/${esc(p.photo)}" alt="" loading="lazy"><span class="nb">${esc(p.numero || "")}</span>` : `<span class="num">${esc(p.numero || "–")}</span>`}</div><div class="bd"><b>${esc(p.prenom)} ${esc(p.nom)}</b><small>${esc(p.poste || "")}${g[p.id] ? ` · ${g[p.id]} but(s)` : ""}</small></div></div>`).join("")}</div>`).join("") : `<div class="card">${empty("L'effectif sera bientôt présenté ici.", "users")}</div>`);
 }
 
 /* ================= Installation (PWA) ================= */
