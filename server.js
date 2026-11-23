@@ -135,6 +135,32 @@ async function currentUser(req) {
   if (!u || u.disabled || (u.tokenVersion || 0) !== t.tv) return null;
   return u;
 }
+/** Exécute les mises à jour d'un même document l'une après l'autre (évite de perdre un message). */
+const locks = new Map();
+function withLock(key, fn) {
+  const prev = locks.get(key) || Promise.resolve();
+  const next = prev.catch(() => {}).then(fn);
+  locks.set(key, next.finally(() => { if (locks.get(key) === next) locks.delete(key); }));
+  return next;
+}
+const MAX_MESSAGES = 500;
+const fil = async uid => (await store.get("fils", uid)) || { messages: [], readStaff: "", readJoueur: "" };
+
+/* IA (Claude) pour les textes d'affiches — facultatif : nécessite ANTHROPIC_API_KEY */
+const AI_KEY = process.env.ANTHROPIC_API_KEY || "";
+const AI_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-5-5";
+async function askClaude(prompt) {
+  const r = await fetch((process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com") + "/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": AI_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model: AI_MODEL, max_tokens: 1200, messages: [{ role: "user", content: prompt }] }),
+    signal: AbortSignal.timeout(45000),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) { console.error("IA :", r.status, d && d.error && d.error.message); throw Object.assign(new Error(r.status === 401 ? "Clé IA invalide : vérifiez ANTHROPIC_API_KEY sur Render." : r.status === 429 ? "L'IA est momentanément saturée, réessayez dans une minute." : "Le service d'IA ne répond pas, réessayez."), { status: 502 }); }
+  return (d.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+}
+
 const publicUser = u => ({ id: u.id, username: u.username, nom: u.nom || "", role: u.role, playerId: u.playerId || "", telephone: u.telephone || "" });
 
 /** Normalise un numéro : chiffres seulement, indicatif 223 (Mali) ajouté aux numéros à 8 chiffres. */
@@ -210,6 +236,8 @@ async function stateFor(user) {
   const annonces = await store.all("annonces");
 
   if (user.role === "fan") {
+    out.suggestions = (await store.all("suggestions")).filter(s => s.userId === user.id).map(s => ({ id: s.id, categorie: s.categorie, texte: s.texte, date: s.date }));
+    out.fils = [];
     out.annonces = annonces.filter(a => a.public === true);
     out.players = out.players.filter(p => p.statut !== "Inactif").map(p => (({ telephone, notes, naissance, cotisation, statut, ...rest }) => rest)(p));
     out.trainings = []; out.decisions = []; out.comptes = [];
@@ -232,9 +260,16 @@ async function stateFor(user) {
       out.users = users.filter(u => u.role === "joueur").map(u => ({ id: u.id, username: u.username, role: u.role, playerId: u.playerId || "" }));
     }
     out.fansCount = users.filter(u => u.role === "fan").length;
+    out.fils = await store.all("fils");
+    out.suggestions = (await store.all("suggestions")).map(s => user.role === "admin" ? s : (({ telephone, ...rest }) => rest)(s));
+    out.iaDisponible = !!AI_KEY;
+    out.stockage = store.kind;
     return out;
   }
   // joueur
+  out.suggestions = [];
+  const monFil = await store.get("fils", user.id);
+  out.fils = monFil ? [monFil] : [];
   const mine = await store.get("comptes", user.id);
   const demandes = (mine && mine.demandes) || [];
   out.comptes = [{ id: user.id, playerId: user.playerId || "", demandes }];
@@ -260,6 +295,68 @@ function cleanPresentation(b) {
   return p;
 }
 async function getPresentation() { const p = await store.get("presentation", "club"); if (!p) return {}; const { id, ...rest } = p; return rest; }
+
+/* ------------------------------------------------------------------ */
+/* Application Android (Play Store) : liaison site ↔ application        */
+/* ------------------------------------------------------------------ */
+// ANDROID_PACKAGE : identifiant du paquet (ex. com.onrender.afm_club.twa)
+// ANDROID_SHA256  : empreinte(s) SHA-256 de la clé de signature, séparées par des virgules
+function assetLinks() {
+  const pkg = (process.env.ANDROID_PACKAGE || "").trim();
+  const fps = (process.env.ANDROID_SHA256 || "").split(",").map(s => s.trim().toUpperCase()).filter(s => /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(s));
+  if (!pkg || !fps.length) return [];
+  return [{ relation: ["delegate_permission/common.handle_all_urls"], target: { namespace: "android_app", package_name: pkg, sha256_cert_fingerprints: fps } }];
+}
+
+/* ------------------------------------------------------------------ */
+/* Politique de confidentialité et suppression de compte (publiques)   */
+/* ------------------------------------------------------------------ */
+const escHtml = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+async function privacyPage(req, res) {
+  const p = await getPresentation();
+  const s = (await store.get("settings", "club")) || {};
+  const nom = escHtml(s.nom || "AFM");
+  const contacts = [p.email && `par e-mail : <b>${escHtml(p.email)}</b>`, p.telephone && `par téléphone : <b>${escHtml(p.telephone)}</b>`, p.whatsapp && `sur WhatsApp : <b>${escHtml(p.whatsapp)}</b>`, p.siege && `ou au siège du club : ${escHtml(p.siege)}`].filter(Boolean);
+  const contact = contacts.length ? contacts.join(", ") : "auprès de la direction du club";
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Confidentialité — ${nom}</title><link rel="icon" href="/icon-192.png">
+<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:760px;margin:0 auto;padding:24px 18px 60px;color:#151632;line-height:1.6}h1{color:#1e1882;line-height:1.2}h2{color:#1e1882;margin-top:28px;border-bottom:2px solid #c9a40e;padding-bottom:4px}header{display:flex;align-items:center;gap:12px}header img{width:64px}a{color:#1e1882}.box{background:#f4f5f9;border-radius:10px;padding:14px 16px}</style></head><body>
+<header><img src="/logo.png" alt=""><div><b>${nom} — Afrique Football Management</b><br><small>Application de gestion du club</small></div></header>
+<h1>Politique de confidentialité</h1>
+<p>Cette politique explique quelles données l'application ${nom} collecte, pourquoi, et comment vous pouvez les faire supprimer. Elle s'applique au site et à l'application Android.</p>
+<h2>Données collectées</h2>
+<ul>
+<li><b>Supporters (espace fans)</b> : nom, numéro de téléphone et mot de passe, fournis lors de l'inscription.</li>
+<li><b>Joueurs</b> : nom, prénom, numéro de maillot, poste, date de naissance, téléphone, photo, statistiques sportives, présences aux entraînements et déclarations d'absence avec leur motif.</li>
+<li><b>Dirigeants et administrateurs</b> : identifiant, nom, téléphone éventuel.</li>
+<li><b>Photos</b> publiées par la direction du club (joueurs, membres, galerie, trophées).</li>
+</ul>
+<p>Les mots de passe sont chiffrés de manière irréversible (scrypt) : personne, pas même le club, ne peut les lire. L'application n'utilise ni publicité, ni outil de mesure d'audience, ni géolocalisation, et n'accède ni à vos contacts ni à votre appareil photo (les photos sont choisies volontairement par la direction).</p>
+<h2>Utilisation des données</h2>
+<p>Les données servent uniquement au fonctionnement du club : connexion à votre compte, organisation des matchs et des entraînements, communication des annonces, présentation de l'effectif et de l'histoire du club. Elles ne sont <b>jamais vendues</b> ni cédées à des tiers à des fins commerciales.</p>
+<h2>Qui voit quoi</h2>
+<ul>
+<li>Le numéro de téléphone d'un supporter n'est visible que par l'administrateur du club.</li>
+<li>Les supporters voient l'effectif (nom, poste, numéro, photo) mais jamais les coordonnées, dates de naissance ou cotisations des joueurs.</li>
+<li>Un joueur ne voit que ses propres demandes d'absence.</li>
+<li>Les finances ne sont visibles que par l'administrateur.</li>
+</ul>
+<h2>Hébergement et sécurité</h2>
+<p>Les données sont transmises de façon chiffrée (HTTPS) et hébergées par des prestataires techniques (Render pour l'application, Neon pour la base de données), qui les stockent pour le compte du club. Les données sont conservées tant que le compte existe.</p>
+<h2 id="suppression">Supprimer votre compte et vos données</h2>
+<div class="box">
+<p><b>Supporters :</b> dans l'application, touchez votre nom en haut de l'écran, puis <b>« Supprimer mon compte fan »</b>. Votre compte, votre nom et votre numéro sont effacés immédiatement.</p>
+<p><b>Joueurs, dirigeants, ou si vous n'avez plus accès à l'application :</b> demandez la suppression ${contact}, en indiquant votre nom et votre numéro de téléphone ou identifiant. La demande est traitée sous 30 jours ; le compte et les données personnelles associées sont supprimés. Les résultats sportifs anonymes du club peuvent être conservés.</p>
+</div>
+<h2>Vos droits</h2>
+<p>Vous pouvez à tout moment demander l'accès, la correction ou la suppression de vos données ${contact}.</p>
+<h2>Mineurs</h2>
+<p>Les comptes des joueurs mineurs sont créés par la direction du club, avec l'accord de leurs parents ou tuteurs.</p>
+<p style="margin-top:32px"><small>Dernière mise à jour : ${new Date().toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" })}</small></p>
+<p><a href="/">← Retour à l'application</a></p>
+</body></html>`;
+  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+  res.end(html);
+}
 
 /* ------------------------------------------------------------------ */
 /* Images (photos des joueurs, membres, trophées, galerie)             */
@@ -362,6 +459,42 @@ async function api(req, res, pathname) {
     return send(res, 200, { ok: true }, { "Set-Cookie": sessionCookie(req, makeToken({ ...u, id: user.id }), SESSION_DAYS * 86400) });
   }
 
+  // Messagerie : le joueur écrit à la direction / marque comme lu
+  if (seg[0] === "messages" && seg[1] === "moi" && user.role === "joueur") {
+    if (m === "POST" && !seg[2]) {
+      const b = await readBody(req, 2e4);
+      const text = String(b.texte || "").trim().slice(0, 2000);
+      if (!text) return fail(res, 400, "Message vide");
+      if (limited("msg:" + user.id, 60, 60 * 60e3)) return fail(res, 429, "Trop de messages, patientez un peu");
+      hit("msg:" + user.id);
+      const f = await withLock("fil:" + user.id, async () => {
+        const f = await fil(user.id); const now = new Date().toISOString();
+        f.messages = [...(f.messages || []), { id: newId(), de: "joueur", auteur: user.nom || user.username, texte: text, date: now }].slice(-MAX_MESSAGES);
+        f.dernier = now; f.readJoueur = now; f.playerId = user.playerId || "";
+        const { id, ...body } = f; await store.put("fils", user.id, body); return { ...body, id: user.id };
+      });
+      return send(res, 200, { fil: f });
+    }
+    if (m === "POST" && seg[2] === "lu") {
+      await withLock("fil:" + user.id, async () => { const f = await store.get("fils", user.id); if (!f) return; const { id, ...body } = f; body.readJoueur = new Date().toISOString(); await store.put("fils", user.id, body); });
+      return send(res, 200, { ok: true });
+    }
+  }
+
+  // Boîte à idées : un fan envoie une suggestion
+  if (m === "POST" && seg[0] === "suggestions" && !seg[1] && user.role === "fan") {
+    if (limited("sugg:" + user.id, 10, 24 * 3600e3)) return fail(res, 429, "Vous avez déjà envoyé beaucoup de suggestions aujourd'hui. Merci, réessayez demain !");
+    const b = await readBody(req, 2e4);
+    const texte = String(b.texte || "").trim().slice(0, 2000);
+    const cats = ["Matchs et ambiance", "Communication", "Maillots et boutique", "Événements", "Club et formation", "Autre"];
+    if (texte.length < 5) return fail(res, 400, "Écrivez votre suggestion (5 caractères minimum)");
+    hit("sugg:" + user.id);
+    const id = newId();
+    const s = { userId: user.id, nom: user.nom || "Supporter", telephone: user.telephone || "", categorie: cats.includes(b.categorie) ? b.categorie : "Autre", texte, date: new Date().toISOString(), statut: "Nouvelle" };
+    await store.put("suggestions", id, s);
+    return send(res, 200, { ok: true, suggestion: { id, categorie: s.categorie, texte, date: s.date } });
+  }
+
   // Un fan peut supprimer son propre compte
   if (m === "DELETE" && seg[0] === "mon-compte" && user.role === "fan") {
     await store.del("users", user.id);
@@ -387,6 +520,74 @@ async function api(req, res, pathname) {
 
   // ---- Administration et dirigeants ----
   if (!staff) return fail(res, 403, "Accès réservé à la direction du club");
+
+  // Messagerie : la direction écrit à un joueur / marque comme lu
+  if (seg[0] === "messages" && validId(seg[1]) && seg[1] !== "moi") {
+    const target = await store.get("users", seg[1]);
+    if (!target || target.role !== "joueur") return fail(res, 404, "Ce joueur n'a pas de compte d'accès");
+    if (m === "POST" && !seg[2]) {
+      const b = await readBody(req, 2e4);
+      const text = String(b.texte || "").trim().slice(0, 2000);
+      if (!text) return fail(res, 400, "Message vide");
+      const f = await withLock("fil:" + target.id, async () => {
+        const f = await fil(target.id); const now = new Date().toISOString();
+        f.messages = [...(f.messages || []), { id: newId(), de: "staff", auteurId: user.id, auteur: user.nom || user.username, texte: text, date: now }].slice(-MAX_MESSAGES);
+        f.dernier = now; f.readStaff = now; f.playerId = target.playerId || "";
+        const { id, ...body } = f; await store.put("fils", target.id, body); return { ...body, id: target.id };
+      });
+      return send(res, 200, { fil: f });
+    }
+    if (m === "POST" && seg[2] === "lu") {
+      await withLock("fil:" + target.id, async () => { const f = await store.get("fils", target.id); if (!f) return; const { id, ...body } = f; body.readStaff = new Date().toISOString(); await store.put("fils", target.id, body); });
+      return send(res, 200, { ok: true });
+    }
+  }
+
+  // Boîte à idées : la direction classe ou supprime
+  if (seg[0] === "suggestions" && validId(seg[1])) {
+    const s = await store.get("suggestions", seg[1]);
+    if (!s) return fail(res, 404, "Suggestion introuvable");
+    if (m === "PUT") {
+      const b = await readBody(req);
+      const statuts = ["Nouvelle", "Lue", "Retenue", "Archivée"];
+      if (!statuts.includes(b.statut)) return fail(res, 400, "Statut invalide");
+      const { id, ...body } = s; body.statut = b.statut;
+      await store.put("suggestions", seg[1], body);
+      return send(res, 200, { ok: true });
+    }
+    if (m === "DELETE") { await store.del("suggestions", seg[1]); return send(res, 200, { ok: true }); }
+  }
+
+  // IA : textes d'une affiche de match
+  if (m === "POST" && seg[0] === "ia" && seg[1] === "affiche") {
+    if (!AI_KEY) return fail(res, 503, "L'IA n'est pas encore activée : ajoutez la variable ANTHROPIC_API_KEY sur Render.");
+    if (limited("ia:" + user.id, 40, 60 * 60e3)) return fail(res, 429, "Limite d'utilisation de l'IA atteinte pour l'heure, réessayez plus tard");
+    const b = await readBody(req, 2e4);
+    const s = (await store.get("settings", "club")) || {};
+    const pres = await getPresentation();
+    const t = v => String(v ?? "").replace(/[\r\n]+/g, " ").slice(0, 200);
+    const tons = { motivant: "motivant et fier", festif: "festif et populaire", officiel: "sobre et officiel", choc: "percutant, ambiance grand match" };
+    const resultat = b.butsPour !== "" && b.butsPour != null && b.butsContre !== "" && b.butsContre != null;
+    hit("ia:" + user.id);
+    const prompt = `Tu es le community manager du club de football ${t(s.nom || "AFM")} (Afrique Football Management), club de formation fondé en 2021 à Bamako, Mali${pres.slogan ? `, slogan « ${t(pres.slogan)} »` : ""}. Les supporters sont maliens : écris en français simple et chaleureux, tu peux glisser une touche malienne avec mesure.
+Rédige les textes d'une AFFICHE ${resultat ? "de RÉSULTAT" : "d'annonce"} pour ce match :
+- Adversaire : ${t(b.adversaire)}
+- Compétition : ${t(b.competition) || "Match"}
+- Date : ${t(b.date)}${b.heure ? " à " + t(b.heure) : ""}
+- Lieu : ${t(b.lieu)}${b.stade ? " (" + t(b.stade) + ")" : ""}
+${resultat ? `- Score final : ${t(s.nom || "AFM")} ${t(b.butsPour)} - ${t(b.butsContre)} ${t(b.adversaire)}${b.buteurs ? ` (buteurs : ${t(b.buteurs)})` : ""}` : ""}
+${b.joueur ? `- Joueur mis en avant sur l'affiche : ${t(b.joueur)}` : ""}
+${b.consigne ? `- Consigne de la direction : ${t(b.consigne)}` : ""}
+Ton souhaité : ${tons[b.ton] || tons.motivant}.
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, de la forme :
+{"accroche":"titre principal de l'affiche, 2 à 5 mots, percutant","sousTitre":"une phrase courte de 4 à 9 mots","legende":"publication pour Facebook/WhatsApp de 2 à 4 phrases avec 2 ou 3 emojis, rappelant les infos pratiques, puis 3 à 5 hashtags dont #AFM"}
+N'invente aucune information (pas de prix, de sponsor ou de joueur non mentionnés).`;
+    const txt = await askClaude(prompt);
+    const mjson = txt.match(/\{[\s\S]*\}/);
+    let out; try { out = JSON.parse(mjson ? mjson[0] : txt); } catch { return fail(res, 502, "L'IA a renvoyé une réponse illisible, réessayez."); }
+    const cut = (v, n) => String(v || "").trim().slice(0, n);
+    return send(res, 200, { accroche: cut(out.accroche, 60), sousTitre: cut(out.sousTitre, 100), legende: cut(out.legende, 1500) });
+  }
 
   // Présentation du club
   if (m === "PUT" && seg[0] === "presentation") {
@@ -434,6 +635,55 @@ async function api(req, res, pathname) {
 
   // ---- Administrateur uniquement ----
   if (!admin) return fail(res, 403, "Réservé à l'administrateur");
+
+  // Restaurer une sauvegarde (fichier copié depuis Paramètres → Données)
+  if (m === "POST" && seg[0] === "import") {
+    const b = await readBody(req, 15e6);
+    const d = isObj(b.data) ? b.data : null;
+    if (!d) return fail(res, 400, "Sauvegarde illisible : vérifiez que vous avez collé tout le texte copié.");
+    const counts = {};
+    const mediaOk = async id => validId(id) && !!(await store.getMedia(id));
+    const photosPerdues = { n: 0 };
+    for (const col of DATA_COLS) {
+      const arr = Array.isArray(d[col]) ? d[col] : [];
+      let n = 0;
+      for (const it of arr) {
+        if (!isObj(it) || !validId(it.id)) continue;
+        const { id, ...body } = it;
+        if (body.photo && !(await mediaOk(body.photo))) { photosPerdues.n++; if (col === "galerie") continue; body.photo = ""; }
+        await store.put(col, id, body); n++;
+      }
+      if (n) counts[col] = n;
+    }
+    if (isObj(d.settings)) { const st = d.settings; await store.put("settings", "club", { nom: clean(st.nom).slice(0, 80) || "AFM", saison: clean(st.saison).slice(0, 30), stade: clean(st.stade).slice(0, 120), devise: clean(st.devise).slice(0, 10) || "FCFA", cotisation: Number(st.cotisation) || 0, fansOuverts: st.fansOuverts !== false }); counts.parametres = 1; }
+    if (isObj(d.presentation) && Object.keys(d.presentation).length) {
+      const p = cleanPresentation(d.presentation);
+      for (const k of PRES_PHOTOS) if (p[k] && !(await mediaOk(p[k]))) { p[k] = ""; photosPerdues.n++; }
+      await store.put("presentation", "club", p); counts.presentation = 1;
+    }
+    // Comptes d'accès : recréés avec un mot de passe provisoire (les supporters devront se réinscrire)
+    const existing = await store.all("users");
+    const identifiants = [];
+    const okUsers = new Set(existing.map(u => u.id));
+    for (const u of Array.isArray(d.users) ? d.users : []) {
+      if (!isObj(u) || !validId(u.id) || !["admin", "dirigeant", "joueur"].includes(u.role)) continue;
+      const username = clean(u.username).toLowerCase();
+      if (!/^[a-z0-9._-]{3,32}$/.test(username)) continue;
+      if (existing.some(x => x.id === u.id || x.username === username)) continue;
+      const phone = u.telephone ? normalizePhone(u.telephone) : "";
+      const pw = crypto.randomBytes(6).toString("base64url").replace(/[-_]/g, "x").slice(0, 8);
+      await store.put("users", u.id, { username, nom: clean(u.nom).slice(0, 80), role: u.role, telephone: phone && !existing.some(x => x.telephone === phone) ? phone : "", playerId: u.role === "joueur" && validId(u.playerId) ? u.playerId : "", passHash: hashPassword(pw), tokenVersion: 0, createdAt: new Date().toISOString() });
+      okUsers.add(u.id); identifiants.push({ username, nom: u.nom || "", role: u.role, password: pw });
+    }
+    if (identifiants.length) counts.comptes_acces = identifiants.length;
+    let nd = 0;
+    for (const c of Array.isArray(d.comptes) ? d.comptes : []) {
+      if (!isObj(c) || !validId(c.id) || !okUsers.has(c.id) || !Array.isArray(c.demandes) || !c.demandes.length) continue;
+      await store.put("comptes", c.id, { playerId: validId(c.playerId) ? c.playerId : "", demandes: c.demandes.filter(x => isObj(x) && validId(x.id)).slice(0, 500) }); nd++;
+    }
+    if (nd) counts.demandes_absence = nd;
+    return send(res, 200, { ok: true, counts, identifiants, photosPerdues: photosPerdues.n });
+  }
 
   if (m === "PUT" && seg[0] === "settings") {
     const b = await readBody(req);
@@ -517,6 +767,8 @@ const server = http.createServer(async (req, res) => {
       return await api(req, res, pathname);
     }
     if (pathname.startsWith("/media/") && req.method === "GET") return await serveMedia(req, res, pathname.slice(7));
+    if (pathname === "/.well-known/assetlinks.json") return send(res, 200, assetLinks(), { "Cache-Control": "public, max-age=300" });
+    if (pathname === "/confidentialite" || pathname === "/confidentialite/" || pathname === "/suppression-compte") return await privacyPage(req, res);
     if (req.method !== "GET" && req.method !== "HEAD") return fail(res, 405, "Méthode non autorisée");
     return await serveStatic(req, res, pathname);
   } catch (e) {
