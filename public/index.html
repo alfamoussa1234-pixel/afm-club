@@ -274,6 +274,36 @@ main{padding:22px 32px 60px;min-width:0}
 .cta{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:22px 0 4px}
 .modal.wide{max-width:760px}
 .fsec{grid-column:1/-1;font-family:"Barlow Condensed";font-size:19px;font-weight:700;color:var(--pri);border-bottom:2px solid var(--gold-l);padding-bottom:4px;margin-top:6px}
+.msg-wrap{display:grid;grid-template-columns:300px 1fr;gap:0;height:calc(100vh - 190px);min-height:420px;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--sh)}
+.msg-list{border-right:1px solid var(--line);overflow-y:auto;display:flex;flex-direction:column}
+.msg-list .srch{padding:10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff}
+.mi{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+.mi:hover{background:#f8f9fc}.mi.on{background:var(--pri-l)}
+.mi .tx{flex:1;min-width:0}.mi .tx b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi .tx small{display:block;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi .dotn{width:10px;height:10px;border-radius:50%;background:var(--red);flex:none}
+.msg-pane{display:flex;flex-direction:column;min-width:0}
+.msg-head{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.thread{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:#f6f7fb}
+.bub{max-width:78%;padding:9px 13px;border-radius:14px;white-space:pre-wrap;word-wrap:break-word;line-height:1.45;box-shadow:0 1px 1px rgba(0,0,0,.05)}
+.bub small{display:block;font-size:11px;opacity:.7;margin-top:3px}
+.bub.me{align-self:flex-end;background:var(--pri);color:#fff;border-bottom-right-radius:4px}
+.bub.them{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px}
+.bub .who{font-size:11.5px;font-weight:700;opacity:.85;margin-bottom:2px}
+.day-sep{align-self:center;font-size:11.5px;color:var(--muted);background:#e9ebf3;border-radius:99px;padding:2px 10px;margin:6px 0}
+.composer{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);background:#fff;align-items:flex-end}
+.composer textarea{resize:none;max-height:140px;min-height:42px}
+.sugg{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--sh)}
+.sugg .meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.sugg p{margin:8px 0;white-space:pre-wrap}
+.sugg .acts{display:flex;gap:6px;flex-wrap:wrap}
+.poster-wrap{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;padding:18px 20px}
+.poster-prev{background:#e9ebf3;border-radius:12px;display:grid;place-items:center;padding:12px;min-height:300px}
+.poster-prev canvas{max-width:100%;max-height:72vh;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.poster-ctl{display:flex;flex-direction:column;gap:10px}
+.poster-ctl .flabel{gap:4px}
+.ia-box{background:linear-gradient(135deg,#f3f0ff,#eef6ff);border:1px solid #d9d4fb;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.modal.xl{max-width:1100px}
 .mob-top{display:none}
 .show-m{display:none}
 @media (max-width:980px){
@@ -305,6 +335,11 @@ main{padding:22px 32px 60px;min-width:0}
   .kpi3 .lab{font-size:10.5px}
   .toast{bottom:88px}
   .tl .card{grid-template-columns:1fr}
+  .msg-wrap{grid-template-columns:1fr;height:calc(100vh - 210px)}
+  .msg-wrap.sel .msg-list{display:none}
+  .msg-wrap:not(.sel) .msg-pane{display:none}
+  .poster-wrap{grid-template-columns:1fr;padding:12px}
+  .poster-prev canvas{max-height:55vh}
   .pres-cover{min-height:240px}
   .pres-cover .in{flex-direction:column;align-items:flex-start;padding:18px;gap:10px}
   .pres-cover .in>img{width:72px}
@@ -341,9 +376,10 @@ main{padding:22px 32px 60px;min-width:0}
       <label class="flabel">Confirmer le mot de passe<input class="input" type="password" name="confirm" autocomplete="new-password" required minlength="6"></label>
       <div id="regErr" class="lerr"></div>
       <button class="btn gold" style="width:100%;justify-content:center;padding:11px">Créer mon compte fan</button>
-      <p class="muted" style="font-size:12px;margin:4px 0 0">Votre numéro sert uniquement à vous connecter. Il n'est jamais affiché aux autres utilisateurs.</p>
+      <p class="muted" style="font-size:12px;margin:4px 0 0">Votre numéro sert uniquement à vous connecter. Il n'est jamais affiché aux autres utilisateurs. <a href="/confidentialite" target="_blank" style="color:var(--pri)">Confidentialité</a></p>
     </form>
     <button type="button" class="btn ghost" style="width:100%;justify-content:center" onclick="openPublicPres()">🏟️ Découvrir le club AFM</button>
+    <a href="/confidentialite" target="_blank" class="muted" style="font-size:12px">Politique de confidentialité</a>
     <button type="button" class="btn ghost" id="loginInstall" style="width:100%;justify-content:center;display:none" onclick="installApp()">📲 Installer l'application</button>
   </div>
 </div>
@@ -405,6 +441,10 @@ const I = {
   x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   plus:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>',
   check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>',
+  chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  bulb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>',
+  poster:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h8"/><circle cx="12" cy="16" r="2.5"/></svg>',
+  send:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>',
   book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>',
   trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
   img:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',
@@ -414,7 +454,7 @@ const I = {
 /* ================= État & stockage (API du serveur) ================= */
 const LIB_COLS = ["histoire", "trophees", "membres", "galerie"];
 const COLS = ["players", "matches", "trainings", "finances", "annonces", "decisions", ...LIB_COLS];
-const S = { players: [], matches: [], trainings: [], finances: [], annonces: [], decisions: [], histoire: [], trophees: [], membres: [], galerie: [], comptes: [], users: [], fansCount: 0,
+const S = { players: [], matches: [], trainings: [], finances: [], annonces: [], decisions: [], histoire: [], trophees: [], membres: [], galerie: [], comptes: [], users: [], fansCount: 0, fils: [], suggestions: [], iaDisponible: false,
   settings: { nom: "AFM", saison: "2026-2027", stade: "", devise: "FCFA", cotisation: 0 } };
 let ME = null, MODE = "loading", canWrite = true, LOADED = false;
 let IS_ADMIN = false, IS_STAFF = false, MY_ID = null, PREVIEW = null, PREVIEW_COMPTE = { id: "apercu", playerId: "", demandes: [] };
@@ -464,7 +504,7 @@ function applyState(d) {
   ME = d.user; IS_ADMIN = ME.role === "admin"; IS_STAFF = IS_ADMIN || ME.role === "dirigeant"; MY_ID = ME.id; canWrite = IS_STAFF;
   if (!IS_STAFF) PREVIEW = null;
   COLS.forEach(c => S[c] = d[c] || []);
-  S.comptes = d.comptes || []; S.users = d.users || []; S.fansCount = d.fansCount || 0; S.presentation = d.presentation || {};
+  S.comptes = d.comptes || []; S.users = d.users || []; S.fansCount = d.fansCount || 0; S.presentation = d.presentation || {}; S.fils = d.fils || []; S.suggestions = d.suggestions || []; S.iaDisponible = !!d.iaDisponible; S.stockage = d.stockage || "";
   if (d.settings) S.settings = { ...S.settings, ...d.settings };
   LOADED = true;
 }
@@ -554,6 +594,8 @@ const ADMIN_ROUTES = [
   { id: "tableau", label: "Tableau de bord", short: "Accueil", icon: "dash", fn: vDash },
   { id: "annonces", label: "Annonces", icon: "mega", fn: vAnnonces },
   { id: "demandes", label: "Absences déclarées", short: "Absences", icon: "inbox", fn: vDemandesAdmin, badge: pendingCount },
+  { id: "messages", label: "Messagerie", short: "Messages", icon: "chat", fn: vMessages, badge: () => unreadStaff().length },
+  { id: "idees", label: "Boîte à idées", short: "Idées", icon: "bulb", fn: vIdeesStaff, badge: () => S.suggestions.filter(s => s.statut === "Nouvelle").length },
   { sep: true },
   { id: "joueurs", label: "Joueurs", icon: "users", fn: vPlayers },
   { id: "matchs", label: "Matchs", icon: "ball", fn: vMatches },
@@ -566,6 +608,7 @@ const PLAYER_ROUTES = [
   { id: "accueil", label: "Accueil", icon: "home", fn: vPHome },
   { id: "annonces", label: "Annonces", icon: "mega", fn: vAnnonces },
   { id: "absences", label: "Mes absences", short: "Absences", icon: "inbox", fn: vPAbsences },
+  { id: "messages", label: "Messagerie", short: "Messages", icon: "chat", fn: vMessages, badge: () => PREVIEW ? 0 : unreadJoueur() },
   { id: "calendrier", label: "Calendrier", icon: "cal", fn: vPCalendar },
   { id: "bibliotheque", label: "Bibliothèque", short: "Club", icon: "book", fn: vLibrary },
 ];
@@ -574,6 +617,7 @@ const FAN_ROUTES = [
   { id: "annonces", label: "Actualités", icon: "mega", fn: vAnnonces },
   { id: "calendrier", label: "Matchs", icon: "ball", fn: vPCalendar },
   { id: "effectif", label: "Effectif", icon: "users", fn: vFEffectif },
+  { id: "idees", label: "Boîte à idées", short: "Idées", icon: "bulb", fn: vIdeesFan },
   { id: "bibliotheque", label: "Le club", short: "Club", icon: "book", fn: vLibrary },
 ];
 const routes = () => { const v = VIEW(); return v === "staff" ? ADMIN_ROUTES.filter(r => !r.adminOnly || IS_ADMIN) : v === "joueur" ? PLAYER_ROUTES : FAN_ROUTES; };
@@ -595,6 +639,7 @@ function renderChrome() {
   const c = myCompte(); const p = pById(c.playerId);
   $("#meBox").innerHTML = (isAdminView() ? `<span>${esc(ME ? ME.nom || ME.username : "")}</span><span class="tag t-pri">${esc(ROLE_LABEL[ME.role] || "")}</span>` : VIEW() === "fan" ? `<span>${esc(PREVIEW ? "Aperçu fan" : ME.nom || "Supporter")}</span><span class="tag t-gold">Supporter</span>` : (p ? `<span>${esc(p.prenom)} ${esc(p.nom)}</span><span class="jersey" style="width:28px;height:28px;font-size:15px">${esc(p.numero || "–")}</span>` : `<span>${esc(ME ? ME.username : "")}</span>`));
   $("#meBox").onclick = openMyAccount; $("#meBox").title = "Mon compte";
+  if (IS_STAFF && S.stockage && S.stockage !== "postgres") { $("#banner").innerHTML = `<div class="banner" style="background:var(--red-l);border-color:#f0b4ad;color:var(--red)"><span>⚠️ <b>Attention : l'application n'est pas reliée à la base de données.</b> Les informations saisies sont temporaires et seront <b>effacées</b> au prochain redémarrage du serveur. Vérifiez la variable DATABASE_URL sur Render avant de saisir des données.</span></div>`; return; }
   if (PREVIEW) $("#banner").innerHTML = `<div class="banner"><span>Aperçu de l'espace ${PREVIEW === "fan" ? "fans, tel que les supporters le voient" : "joueur, tel que vos joueurs le voient"}.</span><button class="btn sm" onclick="setPreview(null)">Revenir à la gestion</button></div>`;
   else if ($("#banner").textContent.includes("Aperçu")) $("#banner").innerHTML = "";
 }
@@ -604,7 +649,9 @@ function render() {
   const r = route();
   const active = document.activeElement; const aid = active && active.id; const pos = active && active.selectionStart;
   $("#view").innerHTML = r.fn();
-  if (aid) { const el = document.getElementById(aid); if (el && el.tagName === "INPUT") { el.focus(); try { el.setSelectionRange(pos, pos); } catch (e) {} } }
+  if (aid) { const el = document.getElementById(aid); if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (e) {} } }
+  const th = document.querySelector(".thread"); if (th) th.scrollTop = th.scrollHeight;
+  if (r.id === "messages") markThreadRead();
   if ($("#np").classList.contains("open")) renderNotif();
 }
 function setPreview(v) { PREVIEW = v; PREVIEW_COMPTE = { id: "apercu", playerId: "", demandes: [] }; location.hash = routes()[0].id; render(); }
@@ -622,7 +669,11 @@ function notifItems() {
   visibleAnnonces().forEach(a => items.push({ ts: a.date || "", ic: "mega", cls: a.priorite === "Urgent" ? "t-red" : a.priorite === "Important" ? "t-gold" : "t-pri", title: a.titre, sub: "Annonce · " + (a.priorite || "Info"), href: "#annonces" }));
   if (isAdminView()) {
     allDemandes().filter(d => statusOf(d.id) === "En attente").forEach(d => items.push({ ts: d.createdAt || "", ic: "inbox", cls: "t-gold", title: `${pName(d.playerId)} : absence déclarée`, sub: `${reqEvent(d)} · ${reqWhen(d)}`, href: "#demandes" }));
+    unreadStaff().forEach(f => { const m = lastMsg(f); items.push({ ts: m.date, ic: "chat", cls: "t-blue", title: `Message de ${filName(f)}`, sub: m.texte.slice(0, 80), href: "#messages", go: f.id }); });
+    S.suggestions.filter(s => s.statut === "Nouvelle").forEach(s => items.push({ ts: s.date || "", ic: "bulb", cls: "t-gold", title: `Nouvelle idée de ${s.nom || "un supporter"}`, sub: `${s.categorie} · ${s.texte.slice(0, 70)}`, href: "#idees" }));
+  } else if (VIEW() === "fan") {
   } else {
+    if (!PREVIEW) (S.fils[0] && S.fils[0].messages || []).filter(m => m.de === "staff" && m.date > (S.fils[0].readJoueur || "")).forEach(m => items.push({ ts: m.date, ic: "chat", cls: "t-blue", title: `Message de ${m.auteur || "la direction"}`, sub: m.texte.slice(0, 80), href: "#messages" }));
     const mine = myCompte().demandes || [];
     mine.forEach(d => { const dec = decisionOf(d.id); if (dec) items.push({ ts: dec.date || "", ic: dec.statut === "Acceptée" ? "check" : "x", cls: dec.statut === "Acceptée" ? "t-green" : "t-red", title: `Absence ${dec.statut.toLowerCase()}`, sub: `${reqEvent(d)} · ${reqWhen(d)}${dec.commentaire ? " · « " + dec.commentaire + " »" : ""}`, href: "#absences" }); });
   }
@@ -793,7 +844,8 @@ function vDash() {
     <div class="card next"><h3>Prochain match ${absNext.length ? `<span class="tag t-gold">${absNext.length} absent(s) signalé(s)</span>` : ""}</h3>
       ${nx ? `<div class="vs"><div class="team">${nx.lieu === "Extérieur" ? esc(nx.adversaire) : nom}</div><div class="vsb">VS</div><div class="team">${nx.lieu === "Extérieur" ? nom : esc(nx.adversaire)}</div></div>
       <div class="meta">${fmtDay(nx.date)}${nx.heure ? " · " + esc(nx.heure) : ""} · ${esc(nx.competition || "Match")} · ${esc(nx.lieu || "")}${nx.stade ? " (" + esc(nx.stade) + ")" : ""}</div>
-      ${absNext.length ? `<div class="meta" style="margin-top:8px">Absents : ${absNext.map(d => esc(pName(d.playerId))).join(", ")}</div>` : ""}`
+      ${absNext.length ? `<div class="meta" style="margin-top:8px">Absents : ${absNext.map(d => esc(pName(d.playerId))).join(", ")}</div>` : ""}
+      <div style="text-align:center;margin-top:14px"><button class="btn gold sm" onclick="openPoster('${nx.id}')">${I.poster.replace("<svg", '<svg width="15" height="15"')} Créer l'affiche</button></div>`
       : `<div class="meta" style="padding:26px 0">Aucun match programmé. <a href="#matchs" style="color:var(--gold)">Programmer un match</a></div>`}
     </div>
     <div class="card"><h3>Derniers résultats <span class="form-strip">${last.slice().reverse().map(m => `<span class="res ${result(m)}">${result(m)}</span>`).join("")}</span></h3>
@@ -852,7 +904,7 @@ function vMatches() {
   ${list.map(m => { const p = isPlayed(m); return `<tr><td><b>${fmtDate(m.date)}</b><br><small class="muted">${esc(m.heure || "")}</small></td><td><b>${esc(m.adversaire)}</b></td><td class="hide-m">${esc(m.competition || "—")}</td>
   <td><span class="tag ${m.lieu === "Domicile" ? "t-pri" : "t-blue"}">${esc(m.lieu || "—")}</span></td>
   <td class="num">${p ? `<span class="score">${m.butsPour} – ${m.butsContre}</span> <span class="res ${result(m)}">${result(m)}</span>` : `<span class="tag t-grey">À jouer</span>`}</td>
-  <td class="hide-m"><small>${(m.buteurs || []).filter(x => x.playerId).map(x => esc(pName(x.playerId)) + (x.buts > 1 ? " ×" + x.buts : "")).join(", ") || "—"}</small></td>${actions("matches", m.id)}</tr>`; }).join("")}
+  <td class="hide-m"><small>${(m.buteurs || []).filter(x => x.playerId).map(x => esc(pName(x.playerId)) + (x.buts > 1 ? " ×" + x.buts : "")).join(", ") || "—"}</small></td>${canWrite && isAdminView() ? `<td class="act"><button class="icon-btn" title="Créer l'affiche" onclick="openPoster('${m.id}')">${I.poster}</button><button class="icon-btn" title="Modifier" onclick="openForm('matches','${m.id}')">${I.edit}</button><button class="icon-btn" title="Supprimer" onclick="askDelete('matches','${m.id}')">${I.trash}</button></td>` : "<td></td>"}</tr>`; }).join("")}
   </tbody></table>` : empty("Aucun match dans cette liste")}</div>`;
 }
 
@@ -928,7 +980,7 @@ function vSettings() {
   <div class="card" style="max-width:640px;margin-top:16px">
     <h3>Données</h3>
     <p class="muted" style="margin:0">Les données sont enregistrées sur le serveur du club et synchronisées entre tous les appareils. Gardez régulièrement une copie de sauvegarde.</p>
-    <div style="margin-top:12px"><button class="btn ghost" onclick="copyExport()">Copier une sauvegarde (JSON)</button></div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" onclick="downloadExport()">⬇ Télécharger une sauvegarde</button><button class="btn ghost" onclick="copyExport()">Copier une sauvegarde (JSON)</button><button class="btn ghost" onclick="openImport()">♻ Restaurer une sauvegarde</button></div>
   </div>`;
 }
 function saveSettingsForm(f) { const d = Object.fromEntries(new FormData(f)); d.cotisation = +d.cotisation || 0; d.fansOuverts = f.fansOuverts.checked; saveSettings(d); toast("Paramètres enregistrés"); }
@@ -1012,6 +1064,39 @@ async function deleteMe() { try { await api("DELETE", "mon-compte"); closeModal(
 async function changePass(f) {
   if (f.nouveau.value !== f.confirm.value) { toast("Les deux mots de passe ne correspondent pas"); return; }
   try { await api("POST", "password", { ancien: f.ancien.value, nouveau: f.nouveau.value }); closeModal(); toast("Mot de passe modifié"); } catch (e) { apiErr(e); }
+}
+function downloadExport() {
+  const blob = new Blob([JSON.stringify(S, null, 2)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `sauvegarde-afm-${today()}.json`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast("Sauvegarde téléchargée");
+}
+function openImport() {
+  $("#modal").classList.add("wide");
+  $("#modal").innerHTML = `<header><h2>Restaurer une sauvegarde</h2><button class="icon-btn" onclick="closeModal()">${I.x}</button></header>
+  <div class="body">
+    <p class="full" style="margin:0">Choisissez le fichier de sauvegarde (<b>.json</b> ou <b>.txt</b>), ou collez son contenu ci-dessous. Les données sont <b>ajoutées</b> à celles déjà présentes ; un élément qui existe déjà est remplacé par sa version sauvegardée.</p>
+    <label class="full">Fichier de sauvegarde<input class="input" type="file" accept=".json,.txt,application/json,text/plain" onchange="readImportFile(this)"></label>
+    <label class="full">…ou collez le texte<textarea class="input" id="impTxt" rows="7" placeholder='{"players": [ ... ] ...}'></textarea></label>
+    <p class="full muted" style="margin:0;font-size:12.5px">Les comptes des joueurs et dirigeants sont recréés avec un <b>mot de passe provisoire</b>, affiché à la fin pour que vous le transmettiez. Les supporters devront se réinscrire. Les photos qui n'existent plus sur le serveur ne peuvent pas être restaurées.</p>
+  </div><footer><button class="btn ghost" onclick="closeModal()">Annuler</button><button class="btn" id="impBtn" onclick="doImport()">Restaurer</button></footer>`;
+  $("#ov").classList.add("open");
+}
+function readImportFile(inp) { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { $("#impTxt").value = r.result; toast("Fichier chargé : cliquez sur Restaurer"); }; r.readAsText(f); }
+async function doImport() {
+  let data; try { data = JSON.parse($("#impTxt").value); } catch (e) { toast("Le texte n'est pas une sauvegarde valide (il doit commencer par { et finir par })"); return; }
+  const b = $("#impBtn"); b.disabled = true; b.textContent = "Restauration…";
+  try {
+    const r = await api("POST", "import", { data });
+    const labels = { players: "joueurs", matches: "matchs", trainings: "entraînements", finances: "opérations financières", annonces: "annonces", decisions: "décisions d'absence", histoire: "étapes du parcours", trophees: "trophées", membres: "membres du club", galerie: "photos de la galerie", parametres: "paramètres", presentation: "présentation", comptes_acces: "comptes d'accès", demandes_absence: "joueurs avec absences" };
+    const lines = Object.entries(r.counts).map(([k, n]) => `<li><b>${n}</b> ${labels[k] || k}</li>`).join("") || "<li>Aucune donnée trouvée dans ce fichier.</li>";
+    const cred = r.identifiants || [];
+    window._cred = cred.map(c => `${c.nom || c.username} : identifiant ${c.username} · mot de passe ${c.password}`).join("\n");
+    $("#modal").innerHTML = `<header><h2>Restauration terminée</h2><button class="icon-btn" onclick="closeModal()">${I.x}</button></header>
+    <div class="body"><div class="full"><ul style="margin:0;padding-left:20px">${lines}</ul>${r.photosPerdues ? `<p class="muted" style="font-size:12.5px">${r.photosPerdues} photo(s) n'existaient plus et n'ont pas pu être restaurées : ajoutez-les de nouveau si besoin.</p>` : ""}</div>
+    ${cred.length ? `<div class="full"><b>Nouveaux mots de passe provisoires à transmettre :</b><div class="wrap" style="border:1px solid var(--line);border-radius:10px;margin-top:6px;max-height:260px;overflow:auto"><table class="tbl"><thead><tr><th>Nom</th><th>Identifiant</th><th>Mot de passe</th></tr></thead><tbody>${cred.map(c => `<tr><td>${esc(c.nom || "")} ${roleTag(c.role)}</td><td><b>${esc(c.username)}</b></td><td style="font-family:ui-monospace,monospace">${esc(c.password)}</td></tr>`).join("")}</tbody></table></div><p class="muted" style="font-size:12.5px">Notez-les maintenant : ils ne seront plus affichés. Chacun pourra ensuite changer son mot de passe.</p></div>` : ""}</div>
+    <footer>${cred.length ? `<button class="btn ghost" onclick="navigator.clipboard.writeText(window._cred).then(()=>toast('Copié'),()=>toast('Copie impossible'))">Copier les identifiants</button>` : ""}<button class="btn" onclick="closeModal()">Terminé</button></footer>`;
+    refresh();
+  } catch (e) { apiErr(e); b.disabled = false; b.textContent = "Restaurer"; }
 }
 async function copyExport() { try { await navigator.clipboard.writeText(JSON.stringify(S, null, 2)); toast("Sauvegarde copiée dans le presse-papiers"); } catch (e) { toast("Copie impossible dans ce navigateur"); } }
 
@@ -1108,7 +1193,7 @@ function openForm(col, id) {
 function scorerRow(b = {}) { return `<div class="scorer-row"><select class="input" name="sc_p">${playerOpts(b.playerId)}</select><input class="input" type="number" min="1" name="sc_n" value="${esc(b.buts || 1)}" title="Nombre de buts"><button type="button" class="icon-btn" onclick="this.parentElement.remove()">${I.x}</button></div>`; }
 function addScorer() { $("#scorers").insertAdjacentHTML("beforeend", scorerRow()); }
 function syncCats(t) { $("#catSel").innerHTML = opt(t === "recette" ? CAT_R : CAT_D); }
-function closeModal() { $("#ov").classList.remove("open"); $("#modal").classList.remove("wide"); FORM = null; }
+function closeModal() { $("#ov").classList.remove("open"); $("#modal").classList.remove("wide", "xl"); FORM = null; }
 $("#ov").addEventListener("mousedown", e => { if (e.target.id === "ov") closeModal(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape") { closeModal(); closeNotif(); } });
 
@@ -1174,7 +1259,7 @@ async function choosePhoto(btn, maxDim) {
 
 /* ================= Bibliothèque ================= */
 const FONCTIONS = ["Président", "Vice-président", "Secrétaire général", "Trésorier", "Dirigeant", "Entraîneur principal", "Entraîneur adjoint", "Entraîneur des gardiens", "Préparateur physique", "Médecin / Kiné", "Intendant", "Communication", "Autre"];
-const GAL_CATS = ["Matchs", "Entraînements", "Événements", "Membres", "Trophées", "Autre"];
+const GAL_CATS = ["Matchs", "Affiches", "Entraînements", "Événements", "Membres", "Trophées", "Autre"];
 const LIB_TABS = [["presentation", "Présentation"], ["histoire", "Parcours"], ["trophees", "Trophées"], ["membres", "Membres du club"], ["galerie", "Galerie photos"]];
 const libEdit = (col, id) => canWrite && isAdminView() ? `<div class="ft"><button class="icon-btn" title="Modifier" onclick="openForm('${col}','${id}')">${I.edit}</button><button class="icon-btn" title="Supprimer" onclick="askDelete('${col}','${id}')">${I.trash}</button></div>` : "";
 const photoOr = (id, ic) => id ? `<img src="/media/${esc(id)}" alt="" loading="lazy">` : I[ic];
@@ -1320,6 +1405,277 @@ async function openPublicPres() {
   } catch (e) { $("#pubBody").innerHTML = `<div class="card">${empty("Le serveur se réveille, réessayez dans quelques secondes.", "gear")}</div>`; }
 }
 function closePublicPres(tab) { $("#pubPres").classList.remove("open"); history.replaceState(null, "", location.pathname); loginTab(tab === "reg" ? "reg" : "login"); }
+
+/* ================= Messagerie direction ↔ joueurs ================= */
+const lastMsg = f => (f.messages || [])[(f.messages || []).length - 1] || { texte: "", date: "" };
+const filOf = uid => S.fils.find(f => f.id === uid);
+const filName = f => { const u = S.users.find(x => x.id === f.id); const pid = (u && u.playerId) || f.playerId; return pById(pid) ? pName(pid) : (u ? u.nom || u.username : "Joueur"); };
+const unreadStaff = () => S.fils.filter(f => { const m = lastMsg(f); return m.de === "joueur" && m.date > (f.readStaff || ""); });
+const unreadJoueur = () => { const f = S.fils[0]; return f ? (f.messages || []).filter(m => m.de === "staff" && m.date > (f.readJoueur || "")).length : 0; };
+UI.msgSel = null; UI.msgQ = ""; UI.drafts = {};
+let readBusy = false;
+async function markThreadRead() {
+  if (readBusy || PREVIEW) return;
+  if (isAdminView()) {
+    const f = UI.msgSel && filOf(UI.msgSel); if (!f) return;
+    const m = lastMsg(f); if (!(m.de === "joueur" && m.date > (f.readStaff || ""))) return;
+    readBusy = true; f.readStaff = nowIso();
+    try { await api("POST", `messages/${f.id}/lu`); bumpVersion(); } catch (e) {} readBusy = false; renderChrome();
+  } else if (VIEW() === "joueur" && unreadJoueur()) {
+    readBusy = true; S.fils[0].readJoueur = nowIso();
+    try { await api("POST", "messages/moi/lu"); bumpVersion(); } catch (e) {} readBusy = false; renderChrome();
+  }
+}
+function threadHTML(f, mine) {
+  const msgs = (f && f.messages) || []; let lastDay = "";
+  if (!msgs.length) return `<div class="empty" style="margin:auto">${I.chat}<div>${mine === "staff" ? "Aucun message. Écrivez le premier message à ce joueur." : "Aucun message pour l'instant. Vous pouvez écrire à la direction du club."}</div></div>`;
+  return msgs.map(m => {
+    const day = (m.date || "").slice(0, 10); const sep = day !== lastDay ? `<div class="day-sep">${fmtDay(day)}</div>` : ""; lastDay = day;
+    const me = m.de === mine;
+    const t = new Date(m.date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    return sep + `<div class="bub ${me ? "me" : "them"}">${m.de === "staff" && mine === "staff" && !me ? "" : ""}${m.de === "staff" && mine === "staff" ? `<div class="who">${esc(m.auteur || "Direction")}</div>` : m.de === "staff" ? `<div class="who">${esc(m.auteur || "Direction")} · Direction</div>` : ""}${esc(m.texte)}<small>${t}</small></div>`;
+  }).join("");
+}
+const composer = key => `<form class="composer" onsubmit="event.preventDefault();sendMsg('${key}')"><textarea class="input" id="msgIn" rows="1" placeholder="Écrire un message…" oninput="UI.drafts['${key}']=this.value;this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!/android|iphone|ipad/i.test(navigator.userAgent)){event.preventDefault();sendMsg('${key}')}">${esc(UI.drafts[key] || "")}</textarea><button class="btn" title="Envoyer">${I.send.replace("<svg", '<svg width="16" height="16"')}</button></form>`;
+async function sendMsg(key) {
+  const ta = $("#msgIn"); const texte = (ta ? ta.value : "").trim(); if (!texte) return;
+  if (PREVIEW) { toast("Aperçu : les messages ne sont pas envoyés"); return; }
+  const btn = document.querySelector(".composer button"); if (btn) btn.disabled = true;
+  try {
+    const r = await api("POST", key === "moi" ? "messages/moi" : `messages/${key}`, { texte });
+    const i = S.fils.findIndex(f => f.id === r.fil.id); if (i >= 0) S.fils[i] = r.fil; else S.fils.push(r.fil);
+    UI.drafts[key] = ""; bumpVersion(); render();
+    const n = $("#msgIn"); if (n) n.focus();
+  } catch (e) { apiErr(e); if (btn) btn.disabled = false; }
+}
+function vMessages() {
+  if (VIEW() === "joueur") {
+    if (PREVIEW) return `<div class="top"><div><h1>Messagerie</h1><p>Discussion privée avec la direction du club</p></div></div><div class="card">${empty("Aperçu : chaque joueur voit ici sa conversation privée avec la direction.", "chat")}</div>`;
+    const f = S.fils[0];
+    return `<div class="top"><div><h1>Messagerie</h1><p>Votre discussion privée avec la direction du club</p></div></div>
+    <div class="msg-wrap sel" style="grid-template-columns:1fr"><div class="msg-pane"><div class="msg-head"><img src="logo.png" style="width:34px" alt=""><div><b>Direction de l'AFM</b><br><small class="muted">Seuls vous et les dirigeants voyez cette conversation</small></div></div><div class="thread">${threadHTML(f, "joueur")}</div>${composer("moi")}</div></div>`;
+  }
+  const accounts = S.users.filter(u => u.role === "joueur");
+  const q = UI.msgQ.toLowerCase();
+  const rows = accounts.map(u => ({ u, f: filOf(u.id), name: pById(u.playerId) ? pName(u.playerId) : u.nom || u.username, p: pById(u.playerId) }))
+    .filter(x => !q || x.name.toLowerCase().includes(q))
+    .sort((a, b) => (b.f ? lastMsg(b.f).date : "").localeCompare(a.f ? lastMsg(a.f).date : "") || a.name.localeCompare(b.name));
+  const sel = UI.msgSel && accounts.find(u => u.id === UI.msgSel);
+  const sf = sel && filOf(sel.id); const sp = sel && pById(sel.playerId);
+  const list = rows.map(x => { const lm = x.f ? lastMsg(x.f) : null; const unread = lm && lm.de === "joueur" && lm.date > (x.f.readStaff || ""); return `<div class="mi ${UI.msgSel === x.u.id ? "on" : ""}" onclick="UI.msgSel='${x.u.id}';render()">${avatar(x.p || {}, 38)}<div class="tx"><b>${esc(x.name)}</b><small>${lm ? (lm.de === "staff" ? "Vous : " : "") + esc(lm.texte.slice(0, 60)) : "Aucun message"}</small></div>${unread ? '<span class="dotn"></span>' : lm ? `<small class="muted">${ago(lm.date).replace("il y a ", "")}</small>` : ""}</div>`; }).join("");
+  return head("Messagerie", "Discussions privées entre la direction et chaque joueur. Tous les dirigeants voient les conversations.", "") +
+    (accounts.length ? `<div class="msg-wrap ${sel ? "sel" : ""}"><div class="msg-list"><div class="srch"><input class="input" id="msgQ" placeholder="Rechercher un joueur…" value="${esc(UI.msgQ)}" oninput="UI.msgQ=this.value;render()"></div>${list || `<div class="empty">Aucun joueur trouvé</div>`}</div>
+    <div class="msg-pane">${sel ? `<div class="msg-head"><button class="icon-btn show-m" onclick="UI.msgSel=null;render()" title="Retour">‹</button>${avatar(sp || {}, 36)}<div><b>${esc(sp ? pName(sp.id) : sel.nom || sel.username)}</b><br><small class="muted">${esc(sp ? [sp.poste, sp.numero ? "n°" + sp.numero : ""].filter(Boolean).join(" · ") : "Joueur")}</small></div></div><div class="thread">${threadHTML(sf, "staff")}</div>${composer(sel.id)}` : `<div class="empty" style="margin:auto">${I.chat}<div>Choisissez un joueur pour lire ou écrire un message.</div></div>`}</div></div>`
+    : `<div class="card">${empty(IS_ADMIN ? "Aucun joueur n'a encore de compte d'accès. Créez leurs accès depuis la page Joueurs (« Créer son accès »)." : "Aucun joueur n'a encore de compte d'accès. L'administrateur peut les créer depuis la page Joueurs.", "chat")}</div>`);
+}
+
+/* ================= Boîte à idées ================= */
+const IDEE_CATS = ["Matchs et ambiance", "Communication", "Maillots et boutique", "Événements", "Club et formation", "Autre"];
+UI.ideeF = "Nouvelle";
+function vIdeesStaff() {
+  const all = [...S.suggestions].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  const counts = s => all.filter(x => x.statut === s).length;
+  const list = UI.ideeF === "Toutes" ? all.filter(x => x.statut !== "Archivée") : all.filter(x => x.statut === UI.ideeF);
+  const stTag = s => `<span class="tag ${({ Nouvelle: "t-gold", Lue: "t-grey", Retenue: "t-green", "Archivée": "t-grey" })[s]}">${esc(s)}</span>`;
+  return head("Boîte à idées", "Les suggestions envoyées par les supporters. Elles sont privées : seuls les dirigeants les lisent.", "") +
+    `<div class="toolbar"><div class="seg">${[["Nouvelle", "Nouvelles (" + counts("Nouvelle") + ")"], ["Toutes", "Toutes"], ["Retenue", "Retenues (" + counts("Retenue") + ")"], ["Archivée", "Archivées"]].map(([k, l]) => `<button class="${UI.ideeF === k ? "on" : ""}" onclick="UI.ideeF='${k}';render()">${l}</button>`).join("")}</div></div>
+    <div style="max-width:820px">${list.length ? list.map(s => `<div class="sugg"><div class="meta"><span><b style="color:var(--ink)">${esc(s.nom || "Supporter")}</b>${IS_ADMIN && s.telephone ? " · " + esc(fmtPhone(s.telephone)) : ""} · ${ago(s.date)}</span><span><span class="tag t-pri">${esc(s.categorie)}</span> ${stTag(s.statut)}</span></div><p>${esc(s.texte)}</p>
+    <div class="acts">${s.statut !== "Lue" && s.statut !== "Retenue" ? `<button class="btn ghost sm" onclick="setIdee('${s.id}','Lue')">Marquer comme lue</button>` : ""}${s.statut !== "Retenue" ? `<button class="btn ok sm" onclick="setIdee('${s.id}','Retenue')">⭐ Retenir</button>` : ""}${s.statut !== "Archivée" ? `<button class="btn ghost sm" onclick="setIdee('${s.id}','Archivée')">Archiver</button>` : `<button class="btn ghost sm" onclick="setIdee('${s.id}','Lue')">Désarchiver</button>`}<button class="icon-btn" title="Supprimer" onclick="delIdee('${s.id}')">${I.trash}</button></div></div>`).join("")
+    : `<div class="card">${empty(UI.ideeF === "Nouvelle" ? "Aucune nouvelle suggestion." : "Aucune suggestion ici.", "bulb")}</div>`}</div>`;
+}
+async function setIdee(id, statut) { const s = S.suggestions.find(x => x.id === id); if (s) s.statut = statut; render(); try { await api("PUT", "suggestions/" + id, { statut }); bumpVersion(); } catch (e) { apiErr(e); refresh(); } }
+async function delIdee(id) { S.suggestions = S.suggestions.filter(x => x.id !== id); render(); try { await api("DELETE", "suggestions/" + id); bumpVersion(); toast("Suggestion supprimée"); } catch (e) { apiErr(e); refresh(); } }
+function vIdeesFan() {
+  const mine = [...S.suggestions].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  return `<div class="top"><div><h1>Boîte à idées</h1><p>Une idée pour améliorer le club, les matchs ou l'ambiance ? Proposez-la à la direction de l'AFM.</p></div></div>
+  <div class="grid two" style="align-items:start"><div class="card"><h3>Nouvelle suggestion</h3>
+    <form onsubmit="event.preventDefault();sendIdee(this)" style="display:flex;flex-direction:column;gap:12px">
+      <label class="flabel">Sujet<select class="input" name="categorie">${IDEE_CATS.map(c => `<option>${c}</option>`).join("")}</select></label>
+      <label class="flabel">Votre idée<textarea class="input" name="texte" id="ideeTxt" rows="6" required minlength="5" maxlength="2000" placeholder="Ex. Organiser une journée portes ouvertes pour rencontrer les joueurs…"></textarea></label>
+      <button class="btn gold" ${PREVIEW ? "disabled" : ""}>Envoyer à la direction</button>
+      <small class="muted">Votre suggestion est lue uniquement par les dirigeants du club. Merci pour votre soutien !</small>
+    </form></div>
+    <div class="card"><h3>Mes suggestions envoyées</h3>${mine.length ? `<div class="list">${mine.map(s => `<div class="li" style="align-items:flex-start"><div><span class="tag t-pri">${esc(s.categorie)}</span><p style="margin:6px 0 0;white-space:pre-wrap">${esc(s.texte)}</p><small class="muted">Envoyée ${ago(s.date)}</small></div></div>`).join("")}</div>` : empty("Vous n'avez pas encore envoyé de suggestion.", "bulb")}</div></div>`;
+}
+async function sendIdee(f) {
+  if (PREVIEW) { toast("Aperçu : rien n'est envoyé"); return; }
+  const btn = f.querySelector("button"); btn.disabled = true;
+  try { const r = await api("POST", "suggestions", { categorie: f.categorie.value, texte: f.texte.value }); S.suggestions.push(r.suggestion); f.reset(); render(); toast("Merci ! Votre idée a été transmise à la direction."); }
+  catch (e) { apiErr(e); } btn.disabled = false;
+}
+
+/* ================= Affiches de match (générateur + IA) ================= */
+if (!CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); return this; };
+const POSTER_FORMATS = { portrait: [1080, 1350, "Portrait 1080×1350 · Facebook / Instagram"], carre: [1080, 1080, "Carré 1080×1080"], story: [1080, 1920, "Story 1080×1920 · statut WhatsApp"] };
+let PST = null;
+const loadImg = src => new Promise(ok => { if (!src) return ok(null); const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; });
+function openPoster(matchId) {
+  const m = S.matches.find(x => x.id === matchId); if (!m) return;
+  const played = isPlayed(m);
+  const buteurs = (m.buteurs || []).filter(b => b.playerId).map(b => pName(b.playerId) + (b.buts > 1 ? " ×" + b.buts : "")).join(", ");
+  const starId = played && m.buteurs && m.buteurs[0] && pById(m.buteurs[0].playerId) && pById(m.buteurs[0].playerId).photo ? m.buteurs[0].playerId : "";
+  PST = { m, format: "portrait", modele: played ? "resultat" : "classique", accroche: played ? (result(m) === "V" ? "VICTOIRE !" : result(m) === "N" ? "MATCH NUL" : "RÉSULTAT") : "JOUR DE MATCH", sousTitre: played ? "Merci à tous pour votre soutien" : "Venez nombreux soutenir l'AFM !", playerId: starId, advLogo: null, legende: "", ton: played && result(m) === "V" ? "festif" : "motivant", consigne: "", buteurs };
+  const withPhoto = S.players.filter(p => p.photo);
+  $("#modal").classList.add("xl");
+  $("#modal").innerHTML = `<header><h2>Affiche · ${esc(m.adversaire)}</h2><button class="icon-btn" onclick="closeModal()">${I.x}</button></header>
+  <div class="poster-wrap"><div class="poster-prev"><canvas id="pc"></canvas></div>
+  <div class="poster-ctl">
+    <label class="flabel">Format<select class="input" onchange="PST.format=this.value;drawPosterSoon()">${Object.entries(POSTER_FORMATS).map(([k, v]) => `<option value="${k}">${v[2]}</option>`).join("")}</select></label>
+    <label class="flabel">Modèle<select class="input" id="pModele" onchange="PST.modele=this.value;drawPosterSoon()"><option value="classique" ${PST.modele === "classique" ? "selected" : ""}>Classique · annonce du match</option><option value="duel" ${PST.modele === "duel" ? "selected" : ""}>Duel · face-à-face</option><option value="resultat" ${PST.modele === "resultat" ? "selected" : ""} ${played ? "" : "disabled"}>Résultat · score final${played ? "" : " (après le match)"}</option></select></label>
+    <label class="flabel">Titre de l'affiche<input class="input" id="pAcc" maxlength="60" value="${esc(PST.accroche)}" oninput="PST.accroche=this.value;drawPosterSoon()"></label>
+    <label class="flabel">Sous-titre<input class="input" id="pSous" maxlength="100" value="${esc(PST.sousTitre)}" oninput="PST.sousTitre=this.value;drawPosterSoon()"></label>
+    <label class="flabel">Joueur mis en avant<select class="input" onchange="PST.playerId=this.value;drawPosterSoon()"><option value="">— Aucun (logo du club) —</option>${withPhoto.map(p => `<option value="${p.id}" ${p.id === PST.playerId ? "selected" : ""}>${esc(p.prenom)} ${esc(p.nom)}</option>`).join("")}</select>${withPhoto.length ? "" : `<small class="muted">Ajoutez des photos aux fiches joueurs pour les mettre en avant.</small>`}</label>
+    <label class="flabel">Logo de l'adversaire (facultatif)<input class="input" type="file" accept="image/*" onchange="advLogo(this)"></label>
+    <div class="ia-box"><b>✨ Textes rédigés par l'IA</b>
+      ${S.iaDisponible ? `<div style="display:flex;gap:8px"><select class="input" onchange="PST.ton=this.value"><option value="motivant" ${PST.ton === "motivant" ? "selected" : ""}>Motivant</option><option value="festif" ${PST.ton === "festif" ? "selected" : ""}>Festif</option><option value="choc" ${PST.ton === "choc" ? "selected" : ""}>Grand match</option><option value="officiel">Officiel</option></select></div>
+      <input class="input" placeholder="Consigne (facultatif) : ex. derby, match décisif…" maxlength="150" oninput="PST.consigne=this.value">
+      <button class="btn" id="iaBtn" onclick="posterIA()">✨ Rédiger avec l'IA</button>` : `<small class="muted">${IS_ADMIN ? "Pour activer l'IA, ajoutez la variable <b>ANTHROPIC_API_KEY</b> sur Render (voir le guide). En attendant, écrivez vos textes vous-même." : "L'IA n'est pas encore activée par l'administrateur."}</small>`}
+      <label class="flabel">Texte de publication (Facebook / WhatsApp)<textarea class="input" id="pLeg" rows="4" oninput="PST.legende=this.value" placeholder="${S.iaDisponible ? "L'IA proposera un texte ici…" : "Écrivez le texte qui accompagnera l'affiche…"}"></textarea></label>
+      <button class="btn ghost sm" onclick="copyLegende()">Copier le texte</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn gold" onclick="posterDownload()">⬇ Télécharger</button><button class="btn" onclick="posterShare()">Partager</button><button class="btn ghost" onclick="posterToGallery()">Enregistrer dans la galerie</button></div>
+  </div></div>`;
+  $("#ov").classList.add("open");
+  drawPoster();
+}
+let pTimer = null;
+function drawPosterSoon() { clearTimeout(pTimer); pTimer = setTimeout(drawPoster, 120); }
+function advLogo(inp) { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = async () => { PST.advLogo = await loadImg(r.result); drawPoster(); }; r.readAsDataURL(f); }
+function copyLegende() { const t = ($("#pLeg") || {}).value || ""; if (!t) { toast("Aucun texte à copier"); return; } navigator.clipboard.writeText(t).then(() => toast("Texte copié"), () => toast("Copie impossible")); }
+async function posterIA() {
+  const b = $("#iaBtn"); b.disabled = true; b.textContent = "✨ L'IA écrit…";
+  const m = PST.m; const p = pById(PST.playerId);
+  try {
+    const r = await api("POST", "ia/affiche", { adversaire: m.adversaire, competition: m.competition, date: fmtDay(m.date), heure: m.heure, lieu: m.lieu, stade: m.stade, butsPour: m.butsPour, butsContre: m.butsContre, buteurs: PST.buteurs, joueur: p ? p.prenom + " " + p.nom : "", ton: PST.ton, consigne: PST.consigne });
+    if (r.accroche) { PST.accroche = r.accroche; $("#pAcc").value = r.accroche; }
+    if (r.sousTitre) { PST.sousTitre = r.sousTitre; $("#pSous").value = r.sousTitre; }
+    PST.legende = r.legende || ""; $("#pLeg").value = PST.legende;
+    drawPoster(); toast("Textes proposés par l'IA : modifiez-les si besoin");
+  } catch (e) { apiErr(e); }
+  b.disabled = false; b.textContent = "✨ Proposer d'autres textes";
+}
+function fitFont(ctx, text, maxW, size, min, weight, family) {
+  let s = size; do { ctx.font = `${weight} ${s}px ${family}`; if (ctx.measureText(text).width <= maxW) break; s -= 2; } while (s > min); return s;
+}
+function wrapText(ctx, text, maxW) {
+  const words = String(text).split(/\s+/).filter(Boolean); const lines = []; let cur = "";
+  words.forEach(w => { const t = cur ? cur + " " + w : w; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; });
+  if (cur) lines.push(cur); return lines;
+}
+function drawCover(ctx, img, x, y, w, h, alignTop) {
+  const k = Math.max(w / img.width, h / img.height); const iw = img.width * k, ih = img.height * k;
+  ctx.drawImage(img, x + (w - iw) / 2, alignTop ? y : y + (h - ih) / 2, iw, ih);
+}
+function teamBadge(ctx, img, initials, cx, cy, r) {
+  ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.96)"; ctx.fill();
+  ctx.lineWidth = r * 0.07; ctx.strokeStyle = "#c9a40e"; ctx.stroke(); ctx.clip();
+  if (img) { const k = Math.min(r * 1.5 / img.width, r * 1.5 / img.height); ctx.drawImage(img, cx - img.width * k / 2, cy - img.height * k / 2, img.width * k, img.height * k); }
+  else { ctx.fillStyle = "#1e1882"; ctx.font = `800 ${r * 0.8}px "Barlow Condensed"`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(initials, cx, cy + r * 0.04); }
+  ctx.restore();
+}
+const initialsOf = s => String(s || "?").split(/\s+/).filter(Boolean).slice(0, 3).map(w => w[0]).join("").toUpperCase();
+async function drawPoster() {
+  const cv = $("#pc"); if (!cv || !PST) return;
+  const [W, H] = POSTER_FORMATS[PST.format]; cv.width = W; cv.height = H;
+  const c = cv.getContext("2d"); const m = PST.m; const nom = (S.settings.nom || "AFM").toUpperCase();
+  try { await Promise.all([document.fonts.load('800 80px "Barlow Condensed"'), document.fonts.load('700 40px "Barlow Condensed"'), document.fonts.load('600 30px Inter')]); } catch (e) {}
+  const logo = await loadImg("logo.png"); const pl = pById(PST.playerId); const photo = pl && pl.photo ? await loadImg("/media/" + pl.photo) : null;
+  const BC = '"Barlow Condensed", "Arial Narrow", sans-serif', IN = 'Inter, Arial, sans-serif';
+  const gold = "#c9a40e", navy = "#13105a", modele = PST.modele, pad = W * 0.06;
+  // ---- Mise en page (calculée d'abord) ----
+  const bandH = W * 0.2, bandY = H - bandH;
+  const r = W * 0.085, cardH = r * 2 + W * 0.08;
+  const extra = modele === "resultat" && PST.buteurs ? W * 0.11 : 0;
+  const rowY = bandY - W * 0.06 - extra - cardH / 2, cardTop = rowY - cardH / 2;
+  const titleTop = pad * 0.8 + W * 0.2;
+  const titleLimit = modele === "duel" ? bandY - W * 0.42 : cardTop - (photo ? W * 0.09 : W * 0.05);
+  // ---- Fond ----
+  const g = c.createLinearGradient(0, 0, W, H); g.addColorStop(0, "#2a23a8"); g.addColorStop(0.55, "#1a1680"); g.addColorStop(1, "#0b0938"); c.fillStyle = g; c.fillRect(0, 0, W, H);
+  c.save(); c.globalAlpha = 0.07; c.strokeStyle = "#fff"; c.lineWidth = 60; for (let i = -H; i < W + H; i += 190) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i + H * 0.6, H); c.stroke(); } c.restore();
+  // ---- Photo du joueur (fondue sur les bords) ou logo en filigrane ----
+  if (modele !== "duel") {
+    if (photo) {
+      const pw = W * 0.64, py = H * 0.16, ph = bandY - py, px = W - pw;
+      const oc = document.createElement("canvas"); oc.width = Math.round(pw); oc.height = Math.round(ph); const o = oc.getContext("2d");
+      drawCover(o, photo, 0, 0, pw, ph, true);
+      o.globalCompositeOperation = "destination-in";
+      const mh = o.createLinearGradient(0, 0, pw, 0); mh.addColorStop(0, "rgba(0,0,0,0)"); mh.addColorStop(0.38, "rgba(0,0,0,1)"); mh.addColorStop(1, "rgba(0,0,0,1)"); o.fillStyle = mh; o.fillRect(0, 0, pw, ph);
+      const mv = o.createLinearGradient(0, 0, 0, ph); mv.addColorStop(0, "rgba(0,0,0,0)"); mv.addColorStop(0.12, "rgba(0,0,0,1)"); mv.addColorStop(0.72, "rgba(0,0,0,1)"); mv.addColorStop(1, "rgba(0,0,0,0)"); o.fillStyle = mv; o.fillRect(0, 0, pw, ph);
+      c.drawImage(oc, px, py);
+    } else if (logo) { c.save(); c.globalAlpha = 0.09; const s = W * 0.95; c.drawImage(logo, W - s * 0.72, H * 0.2, s, s * logo.height / logo.width); c.restore(); }
+  }
+  // ---- En-tête ----
+  if (logo) { const lh = W * 0.13; c.drawImage(logo, pad, pad * 0.8, lh * logo.width / logo.height, lh); }
+  c.textAlign = "left"; c.textBaseline = "alphabetic"; c.fillStyle = "#fff"; c.font = `800 ${W * 0.042}px ${BC}`; c.fillText(nom, pad + W * 0.135, pad * 0.8 + W * 0.06);
+  c.fillStyle = "#9fd3f0"; c.font = `600 ${W * 0.021}px ${IN}`; c.fillText("AFRIQUE FOOTBALL MANAGEMENT", pad + W * 0.135, pad * 0.8 + W * 0.095);
+  const comp = (m.competition || "Match").toUpperCase(); c.font = `800 ${W * 0.03}px ${BC}`; const cw = c.measureText(comp).width + W * 0.05;
+  c.fillStyle = gold; c.beginPath(); c.roundRect(W - pad - cw, pad * 0.8 + W * 0.025, cw, W * 0.06, W * 0.03); c.fill(); c.fillStyle = navy; c.textAlign = "center"; c.fillText(comp, W - pad - cw / 2, pad * 0.8 + W * 0.066);
+  // ---- Titre + sous-titre (taille adaptée à la place disponible) ----
+  const maxTW = modele === "duel" || !photo ? W - pad * 2 : W * 0.6;
+  const tx = modele === "duel" ? W / 2 : pad; c.textAlign = modele === "duel" ? "center" : "left";
+  const titre = (PST.accroche || "").toUpperCase().replace(/ ([!?:;»])/g, " $1").replace(/« /g, "« ");
+  const split = t => { const words = t.split(/ +/).filter(Boolean); const out = []; let cur = ""; words.forEach(w => { const s = cur ? cur + " " + w : w; if (c.measureText(s).width > maxTW && cur) { out.push(cur); cur = w; } else cur = s; }); if (cur) out.push(cur); return out; };
+  c.font = `600 ${W * 0.032}px ${IN}`; const sous = PST.sousTitre ? split(PST.sousTitre).slice(0, 2) : [];
+  let ts = W * 0.135, lines;
+  for (;;) { c.font = `800 ${ts}px ${BC}`; lines = split(titre); const wide = lines.some(l => c.measureText(l).width > maxTW); const hgt = ts * 0.85 + (lines.length - 1) * ts * 0.92 + (sous.length ? W * 0.03 + sous.length * W * 0.045 : 0);
+    if ((lines.length <= 3 && !wide && titleTop + hgt <= titleLimit) || ts <= W * 0.05) break; ts -= 4; }
+  c.font = `800 ${ts}px ${BC}`; let y = titleTop + ts * 0.85;
+  lines.forEach((l, i) => { c.fillStyle = i === lines.length - 1 && lines.length > 1 ? gold : "#fff"; c.shadowColor = "rgba(0,0,0,.35)"; c.shadowBlur = 18; c.fillText(l, tx, y); c.shadowBlur = 0; if (i < lines.length - 1) y += ts * 0.92; });
+  if (lines.length === 1) { c.fillStyle = gold; c.fillRect(modele === "duel" ? W / 2 - W * 0.08 : pad, y + W * 0.02, W * 0.16, W * 0.01); y += W * 0.02; }
+  if (sous.length) { c.fillStyle = "#e4e4f7"; c.font = `600 ${W * 0.032}px ${IN}`; y += W * 0.075; sous.forEach(l => { c.fillText(l, tx, y); y += W * 0.045; }); }
+  // ---- Équipes ----
+  const home = m.lieu !== "Extérieur";
+  const T1 = { img: logo, name: nom, ini: initialsOf(nom) }, T2 = { img: PST.advLogo, name: (m.adversaire || "").toUpperCase(), ini: initialsOf(m.adversaire) };
+  const [L, R] = home ? [T1, T2] : [T2, T1];
+  if (modele === "duel") {
+    const top = y + W * 0.04, bottom = bandY - W * 0.1; const rr = Math.max(W * 0.08, Math.min(W * 0.17, (bottom - top) / 2 - W * 0.02)); const cy = (top + bottom) / 2 - W * 0.01;
+    c.save(); c.globalAlpha = 0.25; c.fillStyle = "#000"; c.beginPath(); c.moveTo(W * 0.56, cy - rr * 1.7); c.lineTo(W, cy - rr * 1.7); c.lineTo(W, cy + rr * 1.7); c.lineTo(W * 0.44, cy + rr * 1.7); c.fill(); c.restore();
+    teamBadge(c, L.img, L.ini, W * 0.25, cy, rr); teamBadge(c, R.img, R.ini, W * 0.75, cy, rr);
+    c.fillStyle = gold; c.font = `800 ${rr * 0.9}px ${BC}`; c.textAlign = "center"; c.textBaseline = "middle"; c.shadowColor = "rgba(0,0,0,.4)"; c.shadowBlur = 20; c.fillText("VS", W / 2, cy); c.shadowBlur = 0; c.textBaseline = "alphabetic";
+    c.fillStyle = "#fff"; [[L, W * 0.25], [R, W * 0.75]].forEach(([t, x]) => { const s = fitFont(c, t.name, W * 0.42, W * 0.05, W * 0.03, 800, BC); c.font = `800 ${s}px ${BC}`; c.fillText(t.name, x, cy + rr + W * 0.065); });
+  } else {
+    if (photo) { c.font = `800 ${W * 0.034}px ${BC}`; c.fillStyle = gold; c.textAlign = "right"; c.shadowColor = "rgba(0,0,0,.5)"; c.shadowBlur = 12; c.fillText(`${pl.prenom} ${pl.nom}`.toUpperCase() + (pl.numero ? "  #" + pl.numero : ""), W - pad, cardTop - W * 0.025); c.shadowBlur = 0; }
+    const cardX = pad, cardW = W - pad * 2;
+    c.fillStyle = "rgba(9,7,50,.78)"; c.beginPath(); c.roundRect(cardX, cardTop, cardW, cardH, W * 0.03); c.fill();
+    c.strokeStyle = "rgba(201,164,14,.6)"; c.lineWidth = 3; c.stroke();
+    const xl = cardX + r + W * 0.04, xr = cardX + cardW - r - W * 0.04;
+    teamBadge(c, L.img, L.ini, xl, rowY - W * 0.012, r); teamBadge(c, R.img, R.ini, xr, rowY - W * 0.012, r);
+    c.textAlign = "center"; c.textBaseline = "middle";
+    if (modele === "resultat" && isPlayed(m)) {
+      const [sl, sr] = home ? [m.butsPour, m.butsContre] : [m.butsContre, m.butsPour];
+      c.fillStyle = "#fff"; c.font = `800 ${W * 0.14}px ${BC}`; c.fillText(`${sl} - ${sr}`, W / 2, rowY + W * 0.01);
+      c.font = `700 ${W * 0.026}px ${BC}`; c.fillStyle = "#9fd3f0"; c.fillText("SCORE FINAL", W / 2, cardTop + W * 0.035);
+    } else { c.fillStyle = gold; c.font = `800 ${W * 0.1}px ${BC}`; c.fillText("VS", W / 2, rowY); }
+    c.fillStyle = "#fff";
+    [[L, xl], [R, xr]].forEach(([t, x]) => { const s = fitFont(c, t.name, r * 2.6, W * 0.03, W * 0.018, 700, BC); c.font = `700 ${s}px ${BC}`; c.fillText(t.name, x, cardTop + cardH - W * 0.024); });
+    c.textBaseline = "alphabetic";
+    if (modele === "resultat" && PST.buteurs) { c.fillStyle = "#fff"; c.font = `600 ${W * 0.027}px ${IN}`; c.textAlign = "center"; wrapText(c, "⚽ " + PST.buteurs, W - pad * 2).slice(0, 2).forEach((l, i) => c.fillText(l, W / 2, cardTop + cardH + W * 0.055 + i * W * 0.04)); }
+  }
+  // ---- Bandeau infos ----
+  c.fillStyle = gold; c.fillRect(0, bandY, W, bandH); c.fillStyle = navy; c.fillRect(0, bandY, W, W * 0.008);
+  const d = m.date ? new Date(m.date + "T00:00:00") : null;
+  const jour = d ? d.toLocaleDateString("fr-FR", { weekday: "long" }).toUpperCase() : ""; const date = d ? d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }).toUpperCase() : "";
+  c.textAlign = "left"; c.fillStyle = navy;
+  const l1 = modele === "resultat" ? date : `${jour} ${date}`.trim(); c.font = `800 ${fitFont(c, l1, W - pad * 2, W * 0.055, W * 0.03, 800, BC)}px ${BC}`; c.fillText(l1, pad, bandY + bandH * 0.44);
+  const lieu = [m.heure && modele !== "resultat" ? m.heure.replace(":", "H") : "", m.stade || (m.lieu === "Domicile" ? S.settings.stade : "") || m.lieu || ""].filter(Boolean).join("  ·  ").toUpperCase();
+  const ls = fitFont(c, lieu, W - pad * 2, W * 0.04, W * 0.022, 700, BC); c.font = `700 ${ls}px ${BC}`; c.fillText(lieu, pad, bandY + bandH * 0.76);
+}
+const posterName = () => `affiche-afm-${(PST.m.adversaire || "match").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-")}-${PST.format}.jpg`;
+const posterBlob = () => new Promise(ok => $("#pc").toBlob(ok, "image/jpeg", 0.92));
+async function posterDownload() { const b = await posterBlob(); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = posterName(); document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast("Affiche téléchargée"); }
+async function posterShare() {
+  const b = await posterBlob(); const file = new File([b], posterName(), { type: "image/jpeg" });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], text: PST.legende || "" }); } catch (e) {} }
+  else { toast("Partage direct non disponible ici : l'affiche est téléchargée"); posterDownload(); }
+}
+async function posterToGallery() {
+  try {
+    let q = 0.88, data = $("#pc").toDataURL("image/jpeg", q); while (data.length > 1.9e6 && q > 0.5) { q -= 0.1; data = $("#pc").toDataURL("image/jpeg", q); }
+    const { id } = await api("POST", "media", { data }); const now = nowIso();
+    const doc = { id: uid(), photo: id, legende: `Affiche · ${PST.m.adversaire}`, categorie: "Affiches", date: today(), createdAt: now, updatedAt: now };
+    await api("PUT", `data/galerie/${doc.id}`, doc); S.galerie.push(doc); bumpVersion(); toast("Affiche enregistrée dans la galerie");
+  } catch (e) { apiErr(e); }
+}
 
 /* ================= Espace fans ================= */
 function vFHome() {
