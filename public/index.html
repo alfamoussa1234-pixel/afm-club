@@ -169,7 +169,7 @@ main{padding:22px 32px 60px;min-width:0}
 .scorer-row{display:flex;gap:8px;margin-bottom:6px}
 .scorer-row select{flex:1}
 .scorer-row input{width:70px}
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(30px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;opacity:0;transition:.25s;z-index:60;pointer-events:none;font-weight:500}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(30px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;opacity:0;transition:.25s;z-index:95;pointer-events:none;font-weight:500}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .banner{background:var(--gold-l);border:1px solid #ecd98a;color:#5e4c00;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .pill-stats{display:flex;gap:22px;flex-wrap:wrap}
@@ -340,6 +340,22 @@ main{padding:22px 32px 60px;min-width:0}
 #scWrap{position:relative}.sc-it{cursor:pointer}
 .sc-ask{position:absolute;left:50%;top:10px;transform:translateX(-50%);display:flex;gap:6px;background:#fff;padding:8px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
 .sc-ask input{width:140px}
+.anv{position:fixed;inset:0;z-index:90;background:#07062a;display:none;flex-direction:column}.anv.open{display:flex}
+.anv-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));background:#0a0833;color:#fff;border-bottom:3px solid var(--gold);flex-wrap:wrap}
+.anv-bar b{font-family:"Barlow Condensed";font-size:20px;flex:1;min-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.anv-bar select{width:auto;padding:6px 8px;background:#1b1860;color:#fff;border-color:#3b3890}
+.anv-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:12px}
+.anv-stage canvas{max-width:100%;max-height:100%;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.5);background:#0d0b40}
+.anv-note{color:#c3c3ee;font-size:12.5px;text-align:center;padding:0 14px calc(10px + env(safe-area-inset-bottom))}
+.ia-card{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:linear-gradient(135deg,#1e1882,#0d0b40);color:#fff;border-radius:12px;padding:12px 16px;border-bottom:3px solid var(--gold)}
+.ia-card p{margin:0;font-size:13.5px;color:#d9d9f7;flex:1;min-width:200px}.ia-card b{color:#fff;font-size:15px;display:block}
+.ia-off{font-size:12.5px;color:var(--muted);background:#f3f3fb;border-radius:10px;padding:8px 12px}
+.ia-intro{margin:0;background:#f3f3fb;border-left:4px solid var(--gold);padding:10px 12px;border-radius:8px;font-size:13.5px}
+.ia-spin{width:54px;height:54px;border-radius:50%;border:5px solid #e4e4f7;border-top-color:var(--gold);margin:0 auto;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sc-step{display:inline-flex;align-items:center;gap:4px;background:#fff6d8;border:1px solid #f0d27a;border-radius:8px;padding:2px 6px;font-size:13px;font-weight:600}
+.sc-step button{border:0;background:#1e1882;color:#fff;width:24px;height:24px;border-radius:6px;font-weight:800;cursor:pointer}
+.sv-anim{margin-top:10px}
 .sv{position:fixed;inset:0;z-index:80;background:#0d0b40;display:none;flex-direction:column}
 .sv.open{display:flex}
 .sv-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));background:#0a0833;color:#fff;border-bottom:3px solid var(--gold);flex-wrap:wrap}
@@ -364,6 +380,7 @@ main{padding:22px 32px 60px;min-width:0}
 @media print{
   body>*:not(#seanceView){display:none!important}
   .sv{position:static;display:block!important;background:#fff}.sv-bar,.sv-stage{display:none!important}
+  .sv-anim,.anv{display:none!important}
   #svPrint{display:block!important}#svPrint .sv-slide{box-shadow:none;page-break-after:always;max-width:none;border-radius:0;padding:10mm}
   .sv-cover{-webkit-print-color-adjust:exact;print-color-adjust:exact}svg{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
@@ -492,6 +509,7 @@ main{padding:22px 32px 60px;min-width:0}
 <div class="np" id="np"></div>
 <div class="ov" id="ov"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
+<div class="anv" id="animView"><div class="anv-bar"><b id="anTitle">Animation</b><button class="btn ghost-w sm" id="anPlay" onclick="animToggle()">⏸ Pause</button><button class="btn ghost-w sm" onclick="animRestart()">↺ Rejouer</button><select class="input" id="anSpeed" onchange="if(AN)AN.speed=+this.value" title="Vitesse"><option value="0.5">Lent ×0,5</option><option value="0.75">×0,75</option><option value="1" selected>Normal</option><option value="1.5">Rapide ×1,5</option></select><button class="btn gold sm" id="anRec" onclick="animRecord()">⬇ Créer la vidéo</button><button class="btn ghost-w sm" onclick="animClose()">✕</button></div><div class="anv-stage"><canvas id="anCv"></canvas></div><div class="anv-note" id="anNote">Les joueurs et le ballon se déplacent étape par étape, comme sur le terrain.</div></div>
 <div class="sv" id="seanceView"><div class="sv-bar"><img src="logo.png" alt=""><b>Fiche de séance</b><span id="svPos"></span><button class="btn ghost-w sm" onclick="svStep(-1)">‹ Précédent</button><button class="btn gold sm" onclick="svStep(1)">Suivant ›</button><button class="btn ghost-w sm" onclick="window.print()">🖨 Imprimer / PDF</button><button class="btn ghost-w sm" onclick="closeSeanceView()">✕</button></div><div class="sv-stage" id="svStage"></div><div id="svPrint"></div></div>
 <div class="lightbox" id="lb" onclick="if(event.target.id==='lb')closeLb()"><button class="cls" onclick="closeLb()">×</button><button class="nav-l" onclick="lbStep(-1)">‹</button><img id="lbImg" alt=""><div class="cap" id="lbCap"></div><button class="nav-r" onclick="lbStep(1)">›</button></div>
 
@@ -1117,7 +1135,7 @@ function pitchSVG(T) {
   else s += `<rect x=".5" y=".5" width="${W - 1}" height="${H - 1}" ${L} stroke-dasharray="1 1"/>`;
   return s;
 }
-function itemSVG(it, sel, sx = "") {
+function itemSVG(it, sel, sx = "", badge = false) {
   const hl = sel ? ` filter="url(#scSel${sx})"` : "", d = `data-id="${it.id}"`;
   const col = { j: "#1e1882", a: "#c0392b", g: "#e0a526" }[it.t];
   if (col) return `<g ${d}${hl} class="sc-it"><circle cx="${it.x}" cy="${it.y}" r="1.9" fill="${col}" stroke="#fff" stroke-width=".35"/><text x="${it.x}" y="${it.y + .65}" text-anchor="middle" font-size="1.85" font-weight="800" fill="${it.t === "g" ? "#13105a" : "#fff"}" font-family="Arial">${esc(it.n || "")}</text></g>`;
@@ -1127,13 +1145,13 @@ function itemSVG(it, sel, sx = "") {
   if (it.t === "texte") return `<g ${d}${hl} class="sc-it"><text x="${it.x}" y="${it.y}" font-size="2.6" font-weight="700" fill="#fff" stroke="#0b0938" stroke-width=".5" paint-order="stroke" font-family="Arial" text-anchor="middle">${esc(it.n || "Texte")}</text></g>`;
   if (it.t === "zone") { const x = Math.min(it.x, it.x2), y = Math.min(it.y, it.y2); return `<g ${d}${hl} class="sc-it"><rect x="${x}" y="${y}" width="${Math.abs(it.x2 - it.x)}" height="${Math.abs(it.y2 - it.y)}" fill="rgba(255,255,255,.14)" stroke="#fff" stroke-width=".3" stroke-dasharray="1 .7" rx=".6"/></g>`; }
   const st = { course: ['#fff', '.38', '1.2 .8', 'aw'], passe: ['#ffd84d', '.42', '', 'ay'], conduite: ['#9fd3f0', '.42', '.35 .55', 'ab'], tir: ['#ff5252', '.6', '', 'ar'] }[it.t];
-  if (st) return `<g ${d}${hl} class="sc-it"><line x1="${it.x}" y1="${it.y}" x2="${it.x2}" y2="${it.y2}" stroke="transparent" stroke-width="2.4"/><line x1="${it.x}" y1="${it.y}" x2="${it.x2}" y2="${it.y2}" stroke="${st[0]}" stroke-width="${st[1]}" ${st[2] ? `stroke-dasharray="${st[2]}"` : ""} stroke-linecap="round" marker-end="url(#${st[3]}${sx})"/></g>`;
+  if (st) return `<g ${d}${hl} class="sc-it"><line x1="${it.x}" y1="${it.y}" x2="${it.x2}" y2="${it.y2}" stroke="transparent" stroke-width="2.4"/><line x1="${it.x}" y1="${it.y}" x2="${it.x2}" y2="${it.y2}" stroke="${st[0]}" stroke-width="${st[1]}" ${st[2] ? `stroke-dasharray="${st[2]}"` : ""} stroke-linecap="round" marker-end="url(#${st[3]}${sx})"/>${badge ? `<g pointer-events="none"><circle cx="${(it.x + it.x2) / 2}" cy="${(it.y + it.y2) / 2}" r="1.25" fill="#0b0938" stroke="#ffd84d" stroke-width=".22"/><text x="${(it.x + it.x2) / 2}" y="${(it.y + it.y2) / 2 + .5}" text-anchor="middle" font-size="1.45" font-weight="800" fill="#ffd84d" font-family="Arial">${esc(String(it.e || ""))}</text></g>` : ""}</g>`;
   return "";
 }
 function schemaSVG(sc, opt = {}) {
   sc = sc || newSchema(); const T = TERRAINS[sc.terrain] || TERRAINS.demi; const sx = "_" + Math.random().toString(36).slice(2, 8);
   const mk = (id, c) => `<marker id="${id}${sx}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${c}"/></marker>`;
-  return `<svg ${opt.id ? `id="${opt.id}"` : ""} data-sx="${sx}" viewBox="0 0 ${T.w} ${T.h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;border-radius:8px;${opt.editable ? "touch-action:none;cursor:crosshair" : ""}"><defs>${mk("aw", "#fff")}${mk("ay", "#ffd84d")}${mk("ab", "#9fd3f0")}${mk("ar", "#ff5252")}<filter id="scSel${sx}"><feDropShadow dx="0" dy="0" stdDeviation=".7" flood-color="#ffe600" flood-opacity="1"/></filter></defs>${pitchSVG(T)}${(sc.items || []).map(it => itemSVG(it, opt.sel === it.id, sx)).join("")}</svg>`;
+  return `<svg ${opt.id ? `id="${opt.id}"` : ""} data-sx="${sx}" viewBox="0 0 ${T.w} ${T.h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;border-radius:8px;${opt.editable ? "touch-action:none;cursor:crosshair" : ""}"><defs>${mk("aw", "#fff")}${mk("ay", "#ffd84d")}${mk("ab", "#9fd3f0")}${mk("ar", "#ff5252")}<filter id="scSel${sx}"><feDropShadow dx="0" dy="0" stdDeviation=".7" flood-color="#ffe600" flood-opacity="1"/></filter></defs>${pitchSVG(T)}${(sc.items || []).map(it => itemSVG(it, opt.sel === it.id, sx, !!opt.editable)).join("")}</svg>`;
 }
 /* --- Éditeur de séance --- */
 let SE = null;
@@ -1146,6 +1164,7 @@ function openSeance(id) {
 const exDuree = s => (s.exercices || []).reduce((a, e) => a + (+e.duree || 0), 0);
 function seanceRender() {
   const t = S.trainings.find(x => x.id === SE.id), s = SE.s;
+  if (SE.ia) return iaRender();
   if (SE.edit !== null && SE.edit !== undefined) return exerciseRender();
   const others = []; S.trainings.forEach(x => { if (x.id !== SE.id) ((x.seance && x.seance.exercices) || []).forEach(e => others.push({ e, from: x })); });
   $("#modal").innerHTML = `<header><h2>Fiche de séance · ${esc(actType(t))} du ${fmtDate(t.date)}</h2><button class="icon-btn" onclick="closeModal()">${I.x}</button></header>
@@ -1153,9 +1172,10 @@ function seanceRender() {
     <label class="full">Objectif de la séance<input class="input" value="${esc(s.objectif)}" oninput="SE.s.objectif=this.value" placeholder="Ex. Améliorer la conservation du ballon sous pression"></label>
     <label>Catégorie<select class="input" onchange="SE.s.categorie=this.value">${opt(CATEGORIES, s.categorie)}</select></label>
     <label>Matériel général<input class="input" value="${esc(s.materiel)}" oninput="SE.s.materiel=this.value" placeholder="Ex. 20 plots, 15 ballons, 4 mini-buts, chasubles"></label>
+    <div class="full">${S.iaDisponible ? `<div class="ia-card"><p><b>✨ Assistant IA du coach</b>Décrivez l'objectif, le nombre de joueurs et le matériel : l'IA prépare toute la séance avec les consignes et les schémas animés.</p><button class="btn gold" onclick="iaOpen('seance')">✨ Créer la séance avec l'IA</button></div>` : `<div class="ia-off">✨ Assistant IA du coach : pas encore activé. L'administrateur doit ajouter la clé <b>ANTHROPIC_API_KEY</b> dans Render (Environment).</div>`}</div>
     <div class="full"><div class="flabel" style="margin-bottom:6px;flex-direction:row;justify-content:space-between">Déroulé de la séance <span class="muted">Durée totale : ${exDuree(s)} min</span></div>
-    ${s.exercices.length ? s.exercices.map((e, i) => `<div class="ex-card"><div class="ex-mini">${schemaSVG(e.schema)}</div><div style="flex:1;min-width:0"><span class="tag t-pri">${esc(e.partie)}</span> <b>${esc(e.titre || "Exercice " + (i + 1))}</b><br><small class="muted">${[e.duree ? e.duree + " min" : "", e.joueurs, e.espace].filter(Boolean).map(esc).join(" · ")}</small></div>
-      <div class="ex-acts"><button class="icon-btn" title="Monter" onclick="exMove(${i},-1)">↑</button><button class="icon-btn" title="Descendre" onclick="exMove(${i},1)">↓</button><button class="icon-btn" title="Modifier" onclick="SE.edit=${i};seanceRender()">${I.edit}</button><button class="icon-btn" title="Supprimer" onclick="SE.s.exercices.splice(${i},1);seanceRender()">${I.trash}</button></div></div>`).join("") : `<div class="empty" style="padding:16px">Aucun exercice. Ajoutez l'échauffement, les exercices et le jeu final.</div>`}
+    ${s.exercices.length ? s.exercices.map((e, i) => `<div class="ex-card"><div class="ex-mini">${schemaSVG(e.schema)}</div><div style="flex:1;min-width:0"><span class="tag t-pri">${esc(e.partie)}</span>${e.ia ? ' <span class="tag t-gold">✨ IA</span>' : ""} <b>${esc(e.titre || "Exercice " + (i + 1))}</b><br><small class="muted">${[e.duree ? e.duree + " min" : "", e.joueurs, e.espace].filter(Boolean).map(esc).join(" · ")}</small></div>
+      <div class="ex-acts">${hasArrows(e.schema) ? `<button class="icon-btn" title="Voir l'animation" onclick="animOpen(SE.s.exercices[${i}])">▶</button>` : ""}<button class="icon-btn" title="Monter" onclick="exMove(${i},-1)">↑</button><button class="icon-btn" title="Descendre" onclick="exMove(${i},1)">↓</button><button class="icon-btn" title="Modifier" onclick="SE.edit=${i};seanceRender()">${I.edit}</button><button class="icon-btn" title="Supprimer" onclick="SE.s.exercices.splice(${i},1);seanceRender()">${I.trash}</button></div></div>`).join("") : `<div class="empty" style="padding:16px">Aucun exercice. Ajoutez l'échauffement, les exercices et le jeu final.</div>`}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn sm" onclick="exAdd()">${I.plus} Nouvel exercice</button>${others.length ? `<select class="input" style="max-width:340px" onchange="if(this.value!=='')exCopy(+this.value)"><option value="">↺ Reprendre un exercice d'une autre séance…</option>${others.map((o, k) => `<option value="${k}">${esc(o.e.titre || "Exercice")} · ${fmtDate(o.from.date)}</option>`).join("")}</select>` : ""}</div></div>
     <label class="full" style="flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" style="width:auto" ${s.visibleJoueurs ? "checked" : ""} onchange="SE.s.visibleJoueurs=this.checked"> Les joueurs peuvent consulter cette fiche de séance</label>
   </div><footer>${s.exercices.length ? `<button class="btn ghost" onclick="saveSeance(true)">▶ Présenter</button>` : ""}<button class="btn ghost" onclick="closeModal()">Annuler</button><button class="btn" onclick="saveSeance()">Enregistrer la séance</button></footer>`;
@@ -1173,15 +1193,15 @@ function saveSeance(present) {
 /* --- Éditeur d'exercice + schéma --- */
 let SC = { tool: "sel", sel: null, drag: null, hist: [] };
 function exerciseRender() {
-  const e = SE.s.exercices[SE.edit]; const ta = (k, rows, ph) => `<textarea class="input" rows="${rows}" placeholder="${ph}" oninput="SE.s.exercices[${SE.edit}].${k}=this.value">${esc(e[k] || "")}</textarea>`;
+  const e = SE.s.exercices[SE.edit]; normSteps(e.schema); const selIt = SC.sel && e.schema.items.find(i => i.id === SC.sel); const ta = (k, rows, ph) => `<textarea class="input" rows="${rows}" placeholder="${ph}" oninput="SE.s.exercices[${SE.edit}].${k}=this.value">${esc(e[k] || "")}</textarea>`;
   const ip = (k, ph, type = "text") => `<input class="input" type="${type}" value="${esc(e[k] || "")}" placeholder="${ph}" oninput="SE.s.exercices[${SE.edit}].${k}=this.value">`;
   $("#modal").innerHTML = `<header><h2>${esc(e.titre || "Nouvel exercice")}</h2><button class="icon-btn" onclick="SE.edit=null;seanceRender()" title="Retour">‹</button></header>
   <div class="body" style="display:block"><div class="ex-grid">
     <div><div class="sc-tools">${SC_TOOLS.map(([k, l]) => `<button type="button" class="${SC.tool === k ? "on" : ""}" onclick="SC.tool='${k}';SC.sel=null;exerciseRender()">${l}</button>`).join("")}</div>
       <div id="scWrap">${schemaSVG(e.schema, { id: "scSvg", editable: true, sel: SC.sel })}</div>
       <div class="sc-bar"><select class="input" style="max-width:170px" onchange="scPush();SE.s.exercices[${SE.edit}].schema.terrain=this.value;exerciseRender()">${Object.entries(TERRAINS).map(([k, v]) => `<option value="${k}" ${e.schema.terrain === k ? "selected" : ""}>${v.label}</option>`).join("")}</select>
-      <button type="button" class="btn ghost sm" onclick="scUndo()">↶ Annuler</button><button type="button" class="btn ghost sm" onclick="scDel()" ${SC.sel ? "" : "disabled"}>Supprimer l'élément</button><button type="button" class="btn ghost sm" onclick="scLabel()" ${SC.sel ? "" : "disabled"}>N° / texte</button><button type="button" class="btn ghost sm" onclick="if(confirmClear())exerciseRender()">Tout effacer</button></div>
-      <small class="muted">Choisissez un outil, puis touchez le terrain. Pour les flèches et les zones, faites glisser. Avec « Déplacer », faites glisser un élément pour le bouger.</small></div>
+      <button type="button" class="btn ghost sm" onclick="scUndo()">↶ Annuler</button><button type="button" class="btn ghost sm" onclick="scDel()" ${SC.sel ? "" : "disabled"}>Supprimer l'élément</button><button type="button" class="btn ghost sm" onclick="scLabel()" ${SC.sel ? "" : "disabled"}>N° / texte</button><button type="button" class="btn ghost sm" onclick="if(confirmClear())exerciseRender()">Tout effacer</button>${selIt && ARROWS.includes(selIt.t) ? `<span class="sc-step" title="Ordre dans l'animation : les flèches de même étape bougent en même temps">Étape <button type="button" onclick="scStep(-1)">−</button><b>${selIt.e || 1}</b><button type="button" onclick="scStep(1)">+</button></span>` : ""}</div>
+      <small class="muted">Choisissez un outil, puis touchez le terrain. Pour les flèches et les zones, faites glisser. Avec « Déplacer », faites glisser un élément pour le bouger. Le chiffre jaune sur chaque flèche est son étape dans l'animation.</small></div>
     <div class="ex-form"><label class="flabel">Partie de séance<select class="input" onchange="SE.s.exercices[${SE.edit}].partie=this.value">${opt(PARTIES, e.partie)}</select></label>
       <label class="flabel">Titre de l'exercice${ip("titre", "Ex. Conservation 5 contre 2")}</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label class="flabel">Durée (min)${ip("duree", "20", "number")}</label><label class="flabel">Joueurs${ip("joueurs", "Ex. 10 (5c5)")}</label></div>
@@ -1190,7 +1210,7 @@ function exerciseRender() {
       <label class="flabel">Organisation / déroulement${ta("description", 3, "Comment l'exercice se déroule")}</label>
       <label class="flabel">Consignes et points clés${ta("consignes", 3, "Une consigne par ligne")}</label>
       <label class="flabel">Variantes / progressions${ta("variantes", 2, "Pour rendre l'exercice plus facile ou plus difficile")}</label></div>
-  </div></div><footer><button class="btn" onclick="SE.edit=null;seanceRender()">✓ Terminer l'exercice</button></footer>`;
+  </div></div><footer>${S.iaDisponible ? `<button class="btn gold" onclick="iaOpen('exercice')">✨ Proposer avec l'IA</button>` : ""}<button class="btn ghost" onclick="animOpen(SE.s.exercices[SE.edit])">▶ Animer</button><button class="btn" onclick="SE.edit=null;seanceRender()">✓ Terminer l'exercice</button></footer>`;
   scBind();
 }
 function confirmClear() { const sc = SE.s.exercices[SE.edit].schema; if (!sc.items.length) return false; scPush(); sc.items = []; SC.sel = null; return true; }
@@ -1198,6 +1218,8 @@ const scCur = () => SE.s.exercices[SE.edit].schema;
 function scPush() { SC.hist.push(JSON.stringify(scCur())); if (SC.hist.length > 40) SC.hist.shift(); }
 function scUndo() { const p = SC.hist.pop(); if (!p) return; SE.s.exercices[SE.edit].schema = JSON.parse(p); SC.sel = null; exerciseRender(); }
 function scDel() { if (!SC.sel) return; scPush(); scCur().items = scCur().items.filter(i => i.id !== SC.sel); SC.sel = null; exerciseRender(); }
+function scStep(d) { const it = scCur().items.find(i => i.id === SC.sel); if (!it) return; scPush(); it.e = Math.max(1, Math.min(20, (+it.e || 1) + d)); exerciseRender(); }
+function normSteps(sc) { const a = (sc.items || []).filter(i => ARROWS.includes(i.t)); let mx = Math.max(0, ...a.map(i => +i.e || 0)); a.forEach(i => { if (!(+i.e)) i.e = ++mx; }); }
 function scLabel() { const it = scCur().items.find(i => i.id === SC.sel); if (it) scAskLabel(it); }
 function scAskLabel(it) {
   const box = document.createElement("div"); box.className = "sc-ask";
@@ -1229,11 +1251,11 @@ function scBind() {
     const d = SC.drag, dx = p.x - d.sx, dy = p.y - d.sy; d.moved = true;
     d.it.x = Math.round((d.o.x + dx) * 10) / 10; d.it.y = Math.round((d.o.y + dy) * 10) / 10;
     if (d.o.x2 !== undefined) { d.it.x2 = Math.round((d.o.x2 + dx) * 10) / 10; d.it.y2 = Math.round((d.o.y2 + dy) * 10) / 10; }
-    const el = svg.querySelector(`.sc-it[data-id="${d.it.id}"]`); if (el) el.outerHTML = itemSVG(d.it, true, svg.dataset.sx);
+    const el = svg.querySelector(`.sc-it[data-id="${d.it.id}"]`); if (el) el.outerHTML = itemSVG(d.it, true, svg.dataset.sx, true);
   };
   svg.onpointerup = svg.onpointercancel = ev => {
     if (!SC.drag) return; const d = SC.drag; SC.drag = null;
-    if (d.line) { const it = d.it; if (Math.hypot(it.x2 - it.x, it.y2 - it.y) > 1.2) { scPush(); scCur().items.push(it); SC.sel = it.id; } }
+    if (d.line) { const it = d.it; if (Math.hypot(it.x2 - it.x, it.y2 - it.y) > 1.2) { scPush(); if (ARROWS.includes(it.t)) it.e = Math.max(0, ...scCur().items.filter(i => ARROWS.includes(i.t)).map(i => +i.e || 0)) + 1; scCur().items.push(it); SC.sel = it.id; } }
     else if (!d.moved) SC.hist.pop();
     exerciseRender();
   };
@@ -1256,7 +1278,7 @@ function svSlides(t) {
     ${s.materiel ? `<p class="sv-mat">🧰 Matériel : ${esc(s.materiel)}</p>` : ""}<div class="sv-club">${nom} · Afrique Football Management</div></div>`;
   return [cover, ...s.exercices.map((e, i) => `<div class="sv-slide"><div class="sv-head"><span class="tag t-gold">${esc(e.partie)}</span><span class="sv-n">${i + 1} / ${s.exercices.length}</span></div>
     <h2>${esc(e.titre || "Exercice " + (i + 1))}</h2><div class="sv-meta">${[e.duree ? "⏱ " + e.duree + " min" : "", e.joueurs ? "👥 " + e.joueurs : "", e.espace ? "📐 " + e.espace : "", e.materiel ? "🧰 " + e.materiel : ""].filter(Boolean).map(esc).join("<span>·</span>")}</div>
-    <div class="sv-body"><div class="sv-schema">${schemaSVG(e.schema)}<div class="sv-legend"><span><i style="background:#1e1882"></i>AFM</span><span><i style="background:#c0392b"></i>Adversaire</span><span><i style="background:#e0a526"></i>Gardien</span><span><i class="ln" style="border-color:#fff;border-style:dashed"></i>Course</span><span><i class="ln" style="border-color:#ffd84d"></i>Passe</span><span><i class="ln" style="border-color:#9fd3f0;border-style:dotted"></i>Conduite</span><span><i class="ln" style="border-color:#ff5252"></i>Tir</span></div></div>
+    <div class="sv-body"><div class="sv-schema">${schemaSVG(e.schema)}<div class="sv-legend"><span><i style="background:#1e1882"></i>AFM</span><span><i style="background:#c0392b"></i>Adversaire</span><span><i style="background:#e0a526"></i>Gardien</span><span><i class="ln" style="border-color:#fff;border-style:dashed"></i>Course</span><span><i class="ln" style="border-color:#ffd84d"></i>Passe</span><span><i class="ln" style="border-color:#9fd3f0;border-style:dotted"></i>Conduite</span><span><i class="ln" style="border-color:#ff5252"></i>Tir</span></div>${hasArrows(e.schema) ? `<button class="btn gold sm sv-anim" onclick="animOpen(S.trainings.find(x=>x.id===SV.id).seance.exercices[${i}])">▶ Voir l'animation / vidéo</button>` : ""}</div>
     <div class="sv-text">${e.objectif ? `<h4>🎯 Objectif</h4><p>${esc(e.objectif)}</p>` : ""}${e.description ? `<h4>📋 Organisation</h4><p>${esc(e.description)}</p>` : ""}${e.consignes ? `<h4>✅ Consignes</h4><ul>${e.consignes.split(/\n+/).filter(x => x.trim()).map(x => `<li>${esc(x.replace(/^[-•*]\s*/, ""))}</li>`).join("")}</ul>` : ""}${e.variantes ? `<h4>🔁 Variantes</h4><p>${esc(e.variantes)}</p>` : ""}</div></div></div>`)];
 }
 function svRender() {
@@ -1267,7 +1289,223 @@ function svRender() {
 }
 function svStep(d) { SV.i += d; svRender(); }
 function closeSeanceView() { $("#seanceView").classList.remove("open"); }
-document.addEventListener("keydown", e => { if (!$("#seanceView") || !$("#seanceView").classList.contains("open")) return; if (e.key === "ArrowRight") svStep(1); if (e.key === "ArrowLeft") svStep(-1); if (e.key === "Escape") closeSeanceView(); });
+document.addEventListener("keydown", e => { if ($("#animView") && $("#animView").classList.contains("open")) { if (e.key === "Escape") animClose(); else if (e.key === " ") { e.preventDefault(); animToggle(); } return; } if (!$("#seanceView") || !$("#seanceView").classList.contains("open")) return; if (e.key === "ArrowRight") svStep(1); if (e.key === "ArrowLeft") svStep(-1); if (e.key === "Escape") closeSeanceView(); });
+
+/* ================= Assistant IA du coach ================= */
+const NIVEAUX = ["Débutant", "Intermédiaire", "Confirmé", "Élite"];
+let IA_PREFS = {}; try { IA_PREFS = JSON.parse(localStorage.getItem("afm-ia-prefs") || "{}") || {}; } catch (e) {}
+function iaOpen(mode) {
+  if (!S.iaDisponible) { toast("L'IA n'est pas activée : ajoutez ANTHROPIC_API_KEY sur Render"); return; }
+  const t = S.trainings.find(x => x.id === SE.id) || {}, ex = mode === "exercice", e = ex ? SE.s.exercices[SE.edit] : null, P = IA_PREFS;
+  SE.ia = { mode, busy: false, objectif: (e && e.objectif) || SE.s.objectif || t.theme || "", categorie: SE.s.categorie || "Seniors", niveau: P.niveau || "Intermédiaire",
+    duree: ex ? (+e.duree || 20) : (P.duree || 90), joueurs: P.joueurs || "18", gardiens: P.gardiens ?? "2", materiel: SE.s.materiel || P.materiel || "", consigne: "", partie: e ? e.partie : "Partie principale", ajout: "ajouter" };
+  iaRender();
+}
+function iaRender() {
+  const f = SE.ia, ex = f.mode === "exercice", set = k => `oninput="SE.ia.${k}=this.value"`;
+  if (f.busy) {
+    $("#modal").innerHTML = `<header><h2>✨ Assistant IA</h2></header><div class="body" style="display:block;text-align:center;padding:44px 20px"><div class="ia-spin"></div>
+    <h3 style="margin:18px 0 6px">${ex ? "L'IA prépare l'exercice…" : "L'IA prépare votre séance…"}</h3><p class="muted">Rédaction des consignes, des variantes et dessin des schémas animés.<br>Cela prend ${ex ? "15 à 40 secondes" : "30 secondes à 2 minutes"}. Gardez cette fenêtre ouverte.</p></div>`;
+    return;
+  }
+  const cur = ex && SE.s.exercices[SE.edit];
+  $("#modal").innerHTML = `<header><h2>✨ ${ex ? "Proposer un exercice avec l'IA" : "Créer la séance avec l'IA"}</h2><button class="icon-btn" onclick="SE.ia=null;seanceRender()" title="Retour">‹</button></header>
+  <div class="body">
+    <p class="full ia-intro">Décrivez ce que vous voulez travailler. L'IA ${ex ? "propose un exercice complet" : "construit toute la séance : échauffement, exercices progressifs, jeu à thème et retour au calme"}, avec les consignes, les variantes et les schémas animés. Vous pourrez tout modifier ensuite.</p>
+    <label class="full">Objectif / thème à travailler<input class="input" id="iaObj" value="${esc(f.objectif)}" ${set("objectif")} placeholder="Ex. Conserver le ballon sous pression et jouer vers l'avant"></label>
+    ${ex ? `<label>Partie de séance<select class="input" onchange="SE.ia.partie=this.value">${opt(PARTIES, f.partie)}</select></label>` : `<label>Catégorie<select class="input" onchange="SE.ia.categorie=this.value">${opt(CATEGORIES, f.categorie)}</select></label>`}
+    <label>Niveau du groupe<select class="input" onchange="SE.ia.niveau=this.value">${opt(NIVEAUX, f.niveau)}</select></label>
+    <label>${ex ? "Durée de l'exercice (min)" : "Durée totale de la séance (min)"}<input class="input" type="number" min="5" max="180" value="${esc(f.duree)}" ${set("duree")}></label>
+    <label>Joueurs disponibles<input class="input" type="number" min="1" max="60" value="${esc(f.joueurs)}" ${set("joueurs")}></label>
+    <label>Dont gardiens<input class="input" type="number" min="0" max="10" value="${esc(f.gardiens)}" ${set("gardiens")}></label>
+    <label class="full">Matériel disponible<input class="input" value="${esc(f.materiel)}" ${set("materiel")} placeholder="Ex. 20 plots, 15 ballons, 4 mini-buts, chasubles"></label>
+    <label class="full">Précisions pour l'IA (facultatif)<textarea class="input" rows="2" ${set("consigne")} placeholder="Ex. terrain en sable, l'adversaire de dimanche presse haut, insister sur le jeu à une touche">${esc(f.consigne)}</textarea></label>
+    ${!ex && SE.s.exercices.length ? `<label class="full">La séance contient déjà ${SE.s.exercices.length} exercice(s)<select class="input" onchange="SE.ia.ajout=this.value"><option value="ajouter" ${f.ajout === "ajouter" ? "selected" : ""}>Ajouter les exercices de l'IA à la suite</option><option value="remplacer" ${f.ajout === "remplacer" ? "selected" : ""}>Remplacer les exercices actuels</option></select></label>` : ""}
+    ${cur && (cur.titre || cur.description || (cur.schema && cur.schema.items.length)) ? `<p class="full banner">L'exercice proposé remplacera le contenu de l'exercice en cours (vous pouvez annuler en fermant sans enregistrer la séance).</p>` : ""}
+  </div><footer><button class="btn ghost" onclick="SE.ia=null;seanceRender()">Annuler</button><button class="btn gold" onclick="iaGo()">✨ ${ex ? "Proposer l'exercice" : "Créer la séance"}</button></footer>`;
+}
+async function iaGo() {
+  const f = SE.ia; if (!f || f.busy) return; const ex = f.mode === "exercice";
+  if (!String(f.objectif).trim() && !String(f.consigne).trim()) { toast("Indiquez l'objectif à travailler"); const o = $("#iaObj"); if (o) o.focus(); return; }
+  IA_PREFS = { niveau: f.niveau, duree: ex ? IA_PREFS.duree : f.duree, joueurs: f.joueurs, gardiens: f.gardiens, materiel: f.materiel };
+  try { localStorage.setItem("afm-ia-prefs", JSON.stringify(IA_PREFS)); } catch (e) {}
+  const body = { mode: ex ? "exercice" : "seance", objectif: f.objectif, categorie: ex ? SE.s.categorie : f.categorie, niveau: f.niveau, duree: +f.duree || (ex ? 20 : 90), joueurs: f.joueurs, gardiens: f.gardiens, materiel: f.materiel, consigne: f.consigne };
+  if (ex) { body.partie = f.partie; body.existants = SE.s.exercices.filter((_, i) => i !== SE.edit).map(e => e.titre).filter(Boolean).join(" ; "); }
+  else if (f.ajout === "ajouter") body.existants = SE.s.exercices.map(e => e.titre).filter(Boolean).join(" ; ");
+  f.busy = true; iaRender();
+  try {
+    const r = await api("POST", "ia/seance", body);
+    if (!SE || SE.ia !== f || !$("#ov").classList.contains("open")) return;
+    if (ex) {
+      const cur = SE.s.exercices[SE.edit]; SE.s.exercices[SE.edit] = { ...r.exercice, id: cur ? cur.id : r.exercice.id };
+      SC.sel = null; SC.hist = []; SC.tool = "sel"; toast("Exercice proposé : vérifiez-le, puis ▶ Animer");
+    } else {
+      const add = r.exercices || [], keep = f.ajout === "ajouter" && SE.s.exercices.length;
+      SE.s.exercices = keep ? [...SE.s.exercices, ...add] : add;
+      if (r.objectif && (!keep || !SE.s.objectif)) SE.s.objectif = r.objectif;
+      if (r.materiel && (!keep || !SE.s.materiel)) SE.s.materiel = r.materiel;
+      SE.s.categorie = f.categorie;
+      toast(`Séance prête : ${add.length} exercices. Vérifiez puis enregistrez.`);
+    }
+    SE.ia = null; seanceRender();
+  } catch (e) { if (SE && SE.ia === f) { f.busy = false; iaRender(); } apiErr(e); }
+}
+
+/* ================= Animation des exercices + vidéo ================= */
+const ARROWS = ["course", "passe", "conduite", "tir"];
+const AN_LBL = { course: "Course", passe: "Passe", conduite: "Conduite de balle", tir: "Tir" };
+const AN_ST = { course: ["#ffffff", .38, [1.2, .8]], passe: ["#ffd84d", .42, []], conduite: ["#9fd3f0", .42, [.35, .55]], tir: ["#ff5252", .6, []] };
+const AN_T = { intro: 1.2, step: 2.2, outro: 2.2 };
+const hasArrows = sc => !!(sc && (sc.items || []).some(i => ARROWS.includes(i.t)));
+function animPlan(sc) {
+  const items = sc.items || [];
+  const toks = items.filter(i => ["j", "a", "g", "ballon"].includes(i.t)).map(i => ({ id: i.id, t: i.t, n: i.n || "", x: i.x, y: i.y, from: 0 }));
+  const arr = items.filter(i => ARROWS.includes(i.t)); let mx = Math.max(0, ...arr.map(a => +a.e || 0));
+  const ar = arr.map(a => ({ ...a, e: +a.e || ++mx }));
+  const groups = [...new Set(ar.map(a => a.e))].sort((a, b) => a - b).map(e => ar.filter(a => a.e === e));
+  const pos = {}; toks.forEach(t => pos[t.id] = { x: t.x, y: t.y });
+  const near = (x, y, ok, max) => { let best = null, bd = max; toks.forEach(t => { if (!ok(t)) return; const p = pos[t.id], d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = t; } }); return best; };
+  const steps = groups.map((g, k) => {
+    const snap = JSON.parse(JSON.stringify(pos)), moves = [], used = new Set();
+    // d'abord les déplacements de joueurs, puis le ballon
+    g.filter(a => a.t === "course" || a.t === "conduite").forEach(a => {
+      const p = near(a.x, a.y, t => t.t !== "ballon" && !used.has(t.id), 5); if (!p) return; used.add(p.id);
+      moves.push({ id: p.id, fx: pos[p.id].x, fy: pos[p.id].y, tx: a.x2, ty: a.y2 });
+      if (a.t === "conduite") {
+        const b = near(pos[p.id].x, pos[p.id].y, t => t.t === "ballon" && !used.has(t.id), 4.5);
+        if (b) { used.add(b.id); const L = Math.hypot(a.x2 - a.x, a.y2 - a.y) || 1; moves.push({ id: b.id, fx: pos[b.id].x, fy: pos[b.id].y, tx: a.x2 + (a.x2 - a.x) / L * 1.4, ty: a.y2 + (a.y2 - a.y) / L * 1.4 }); }
+      }
+    });
+    g.filter(a => a.t === "passe" || a.t === "tir").forEach(a => {
+      let b = near(a.x, a.y, t => t.t === "ballon" && !used.has(t.id), 5);
+      if (!b) { b = { id: "vb" + k + "_" + moves.length, t: "ballon", n: "", x: a.x, y: a.y, from: k }; toks.push(b); pos[b.id] = { x: a.x, y: a.y }; snap[b.id] = { x: a.x, y: a.y }; }
+      used.add(b.id); let tx = a.x2, ty = a.y2;
+      if (a.t === "passe") {
+        const at = id => { const m = moves.find(m => m.id === id); return m ? { x: m.tx, y: m.ty } : pos[id]; };
+        let rp = null, bd = 2.6; toks.forEach(t => { if (t.t === "ballon") return; const q = at(t.id), d = Math.hypot(q.x - a.x2, q.y - a.y2); if (d < bd) { bd = d; rp = q; } });
+        if (rp) { const L = Math.hypot(a.x2 - a.x, a.y2 - a.y) || 1; tx = rp.x - (a.x2 - a.x) / L * 1.7; ty = rp.y - (a.y2 - a.y) / L * 1.7; }
+      }
+      moves.push({ id: b.id, fx: pos[b.id].x, fy: pos[b.id].y, tx, ty, ball: true });
+    });
+    moves.forEach(m => pos[m.id] = { x: m.tx, y: m.ty });
+    const lbl = [...new Set(g.map(a => AN_LBL[a.t]))].join(" + ");
+    return { arrows: g, moves, snap, lbl };
+  });
+  return { toks, steps, fin: JSON.parse(JSON.stringify(pos)) };
+}
+let AN = null;
+async function animOpen(e) {
+  if (!e || !hasArrows(e.schema)) { toast("Dessinez des flèches (course, passe, conduite, tir) pour animer l'exercice"); return; }
+  const sc = e.schema, T = TERRAINS[sc.terrain] || TERRAINS.demi, k = Math.min(1200 / T.w, 1000 / T.h), ev = v => Math.round(v / 2) * 2;
+  const pw = ev(T.w * k), ph = ev(T.h * k), top = 104, bot = 96;
+  const statics = (sc.items || []).filter(i => ["zone", "plot", "but", "texte"].includes(i.t));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pw}" height="${ph}" viewBox="0 0 ${T.w} ${T.h}">${pitchSVG(T)}${statics.map(i => itemSVG(i, false, "")).join("")}</svg>`;
+  const bg = await loadImg("data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg)); if (!bg) { toast("Animation impossible sur cet appareil"); return; }
+  const logo = await loadImg("logo.png");
+  const cv = $("#anCv"); cv.width = pw; cv.height = ph + top + bot;
+  if (AN && AN.raf) cancelAnimationFrame(AN.raf);
+  const P = animPlan(sc);
+  AN = { e, P, T, k, pw, ph, top, bot, ctx: cv.getContext("2d"), bg, logo, t: 0, last: 0, playing: true, speed: +($("#anSpeed").value) || 1, dur: AN_T.intro + P.steps.length * AN_T.step + AN_T.outro, rec: null, video: null };
+  $("#anTitle").textContent = e.titre || "Exercice"; $("#anRec").textContent = "⬇ Créer la vidéo"; $("#anRec").disabled = false;
+  $("#anNote").textContent = `${P.steps.length} étape${P.steps.length > 1 ? "s" : ""} · les joueurs et le ballon se déplacent comme sur le terrain. « Créer la vidéo » l'enregistre pour WhatsApp.`;
+  $("#animView").classList.add("open"); animBtns(); AN.raf = requestAnimationFrame(animTick);
+}
+function animTick(now) {
+  if (!AN) return;
+  if (AN.last && AN.playing) AN.t = Math.min(AN.dur, AN.t + (now - AN.last) / 1000 * (AN.rec ? 1 : AN.speed));
+  AN.last = now; animDraw(AN, AN.t);
+  if (AN.playing && AN.t >= AN.dur) { AN.playing = false; animBtns(); if (AN.rec) animRecStop(); }
+  AN.raf = requestAnimationFrame(animTick);
+}
+const ease = u => u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+const clamp01 = u => Math.max(0, Math.min(1, u));
+function animDraw(A, t) {
+  const c = A.ctx, k = A.k, top = A.top, W = A.pw, H = A.ph + A.top + A.bot, N = A.P.steps.length;
+  const X = x => x * k, Y = y => top + y * k;
+  const si = t < AN_T.intro ? -1 : Math.min(N, Math.floor((t - AN_T.intro) / AN_T.step)), u = si >= 0 && si < N ? (t - AN_T.intro - si * AN_T.step) / AN_T.step : 0;
+  // fond + bandeaux
+  c.fillStyle = "#0d0b40"; c.fillRect(0, 0, W, H);
+  const gr = c.createLinearGradient(0, 0, W, 0); gr.addColorStop(0, "#1e1882"); gr.addColorStop(1, "#0d0b40"); c.fillStyle = gr; c.fillRect(0, 0, W, top);
+  c.fillStyle = "#e0a526"; c.fillRect(0, top - 5, W, 5); c.fillRect(0, top + A.ph, W, 5);
+  let lx = 18; if (A.logo) { c.drawImage(A.logo, 14, 14, 74, 74); lx = 100; }
+  c.textBaseline = "alphabetic"; c.textAlign = "left";
+  c.fillStyle = "#e0a526"; c.font = '700 20px "Barlow Condensed", Arial, sans-serif'; c.fillText(((S.settings && S.settings.nom) || "AFM").toUpperCase() + " · EXERCICE" + (A.e.partie ? " · " + A.e.partie.toUpperCase() : ""), lx, 38);
+  c.fillStyle = "#fff"; c.font = '700 36px "Barlow Condensed", Arial, sans-serif'; c.fillText(fitTxt(c, A.e.titre || "Exercice", W - lx - 16), lx, 80);
+  c.drawImage(A.bg, 0, top, A.pw, A.ph);
+  // flèches
+  A.P.steps.forEach((s, i) => {
+    if (si > N - 1 || i < si) s.arrows.forEach(a => anArrow(c, a, 1, si >= N ? .9 : .38, X, Y, k));
+    else if (i === si) s.arrows.forEach(a => anArrow(c, a, clamp01(u / .3), 1, X, Y, k));
+  });
+  // positions
+  let pos; if (si < 0) pos = N ? A.P.steps[0].snap : A.P.fin; else if (si >= N) pos = A.P.fin;
+  else { const s = A.P.steps[si], v = ease(clamp01((u - .18) / .62)); pos = { ...s.snap }; s.moves.forEach(m => pos[m.id] = { x: m.fx + (m.tx - m.fx) * v, y: m.fy + (m.ty - m.fy) * v, mv: v > 0 && v < 1 }); }
+  const vis = A.P.toks.filter(tk => pos[tk.id] && (si < 0 ? tk.from === 0 : tk.from <= Math.min(si, N - 1) || si >= N));
+  vis.filter(tk => tk.t !== "ballon").forEach(tk => anTok(c, tk, pos[tk.id], X, Y, k));
+  vis.filter(tk => tk.t === "ballon").forEach(tk => anTok(c, tk, pos[tk.id], X, Y, k));
+  // légende
+  const by = top + A.ph + 5;
+  c.fillStyle = "#0a0833"; c.fillRect(0, by, W, A.bot - 5);
+  const cap = si < 0 ? "Mise en place" : si >= N ? "✓ Fin de l'action — on rejoue !" : `Étape ${si + 1} / ${N} · ${A.P.steps[si].lbl}`;
+  c.fillStyle = "#fff"; c.font = '700 30px "Barlow Condensed", Arial, sans-serif'; c.textAlign = "center"; c.fillText(fitTxt(c, cap, W - 30), W / 2, by + 42);
+  // points de progression
+  const dw = Math.min(46, (W - 60) / Math.max(1, N)), x0 = W / 2 - dw * N / 2;
+  for (let i = 0; i < N; i++) { c.fillStyle = i < si || si >= N ? "#e0a526" : i === si ? "#fff" : "#3b3890"; c.fillRect(x0 + i * dw + 3, by + 62, dw - 6, 7); }
+  c.textAlign = "left";
+}
+function fitTxt(c, s, w) { s = String(s); if (c.measureText(s).width <= w) return s; while (s.length > 3 && c.measureText(s + "…").width > w) s = s.slice(0, -1); return s + "…"; }
+function anArrow(c, a, prog, alpha, X, Y, k) {
+  if (prog <= 0) return; const st = AN_ST[a.t]; const x1 = X(a.x), y1 = Y(a.y), xe = X(a.x2), ye = Y(a.y2);
+  const x2 = x1 + (xe - x1) * prog, y2 = y1 + (ye - y1) * prog, L = Math.hypot(x2 - x1, y2 - y1); if (L < 1) return;
+  const lw = st[1] * k, hl = Math.max(1.5 * k, lw * 4), ux = (x2 - x1) / L, uy = (y2 - y1) / L, bx = x2 - ux * hl * .8, by = y2 - uy * hl * .8;
+  c.save(); c.globalAlpha = alpha; c.strokeStyle = c.fillStyle = st[0]; c.lineWidth = lw; c.lineCap = "round"; c.setLineDash(st[2].map(v => v * k));
+  c.shadowColor = "rgba(0,0,0,.35)"; c.shadowBlur = 4;
+  c.beginPath(); c.moveTo(x1, y1); c.lineTo(L > hl ? bx : x1, L > hl ? by : y1); c.stroke(); c.setLineDash([]);
+  c.beginPath(); c.moveTo(x2, y2); c.lineTo(x2 - ux * hl - uy * hl * .45, y2 - uy * hl + ux * hl * .45); c.lineTo(x2 - ux * hl + uy * hl * .45, y2 - uy * hl - ux * hl * .45); c.closePath(); c.fill();
+  c.restore();
+}
+function anTok(c, tk, p, X, Y, k) {
+  const x = X(p.x), y = Y(p.y); c.save(); c.shadowColor = "rgba(0,0,0,.45)"; c.shadowBlur = 6; c.shadowOffsetY = 2;
+  if (tk.t === "ballon") {
+    c.beginPath(); c.arc(x, y, .95 * k, 0, 7); c.fillStyle = "#fff"; c.fill(); c.shadowColor = "transparent"; c.lineWidth = .25 * k; c.strokeStyle = "#111"; c.stroke();
+    c.beginPath(); c.arc(x, y, .32 * k, 0, 7); c.fillStyle = "#111"; c.fill(); c.restore(); return;
+  }
+  const col = { j: "#1e1882", a: "#c0392b", g: "#e0a526" }[tk.t];
+  if (p.mv) { c.beginPath(); c.arc(x, y, 2.7 * k, 0, 7); c.fillStyle = "rgba(255,216,77,.35)"; c.fill(); }
+  c.beginPath(); c.arc(x, y, 1.9 * k, 0, 7); c.fillStyle = col; c.fill(); c.shadowColor = "transparent"; c.lineWidth = .35 * k; c.strokeStyle = "#fff"; c.stroke();
+  if (tk.n) { c.fillStyle = tk.t === "g" ? "#13105a" : "#fff"; c.font = `800 ${1.85 * k}px Arial, sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(tk.n, x, y + .08 * k); }
+  c.restore();
+}
+function animBtns() { if (!AN) return; $("#anPlay").textContent = AN.playing ? "⏸ Pause" : AN.t >= AN.dur ? "▶ Rejouer" : "▶ Lecture"; $("#anPlay").disabled = $("#anSpeed").disabled = !!AN.rec; }
+function animToggle() { if (!AN || AN.rec) return; if (AN.t >= AN.dur) AN.t = 0; AN.playing = !AN.playing; animBtns(); }
+function animRestart() { if (!AN || AN.rec) return; AN.t = 0; AN.playing = true; animBtns(); }
+function animClose() { if (AN) { if (AN.rec) { try { AN.rec.onstop = null; AN.rec.stop(); } catch (e) {} } cancelAnimationFrame(AN.raf); } AN = null; $("#animView").classList.remove("open"); }
+function animRecord() {
+  if (!AN || AN.rec) return;
+  if (AN.video) return animDeliver();
+  const cv = $("#anCv");
+  const mt = ["video/mp4;codecs=avc1.42E01E", "video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t));
+  if (!cv.captureStream || !window.MediaRecorder || !mt) { toast("Votre navigateur ne permet pas de créer la vidéo. Utilisez Chrome (Android/ordinateur) ou Safari récent."); return; }
+  const chunks = []; let rec;
+  try { rec = new MediaRecorder(cv.captureStream(30), { mimeType: mt, videoBitsPerSecond: 4e6 }); } catch (e) { toast("Création de la vidéo impossible sur cet appareil"); return; }
+  rec.ondataavailable = ev => { if (ev.data && ev.data.size) chunks.push(ev.data); };
+  rec.onstop = () => { if (!AN) return; const type = mt.split(";")[0]; AN.video = { blob: new Blob(chunks, { type }), ext: type === "video/mp4" ? "mp4" : "webm" }; AN.rec = null; animBtns();
+    $("#anRec").disabled = false; $("#anRec").textContent = navigator.canShare ? "📤 Envoyer / enregistrer la vidéo" : "⬇ Télécharger la vidéo";
+    toast(AN.video.ext === "mp4" ? "Vidéo prête !" : "Vidéo prête (format WebM)"); };
+  AN.rec = rec; AN.t = 0; AN.playing = true; AN.last = 0; animBtns(); $("#anRec").disabled = true; $("#anRec").textContent = "● Enregistrement…";
+  rec.start(250);
+}
+function animRecStop() { try { AN.rec.stop(); } catch (e) {} }
+async function animDeliver() {
+  const v = AN && AN.video; if (!v) return;
+  const name = (String(AN.e.titre || "exercice").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w -]+/g, "").trim().replace(/\s+/g, "-").slice(0, 50) || "exercice") + "-AFM." + v.ext;
+  const file = new File([v.blob], name, { type: v.blob.type });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: AN.e.titre || "Exercice AFM", text: "Exercice AFM : " + (AN.e.titre || "") }); return; } catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(v.blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000); toast("Vidéo téléchargée : " + name);
+}
 
 /* ================= Score en direct ================= */
 let LV = null;
@@ -1652,7 +1890,7 @@ const scorersText = m => { const c = {}; matchGoals(m).forEach(g => { if (g.play
 function syncCats(t) { $("#catSel").innerHTML = opt(t === "recette" ? CAT_R : CAT_D); }
 function closeModal() { $("#ov").classList.remove("open"); $("#modal").classList.remove("wide", "xl"); FORM = null; }
 $("#ov").addEventListener("mousedown", e => { if (e.target.id === "ov") closeModal(); });
-document.addEventListener("keydown", e => { if (e.key === "Escape") { closeModal(); closeNotif(); } });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#animView").classList.contains("open")) { closeModal(); closeNotif(); } });
 
 function submitForm(f) {
   const fd = new FormData(f), d = {};
