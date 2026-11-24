@@ -147,22 +147,61 @@ const MAX_MESSAGES = 500;
 const fil = async uid => (await store.get("fils", uid)) || { messages: [], readStaff: "", readJoueur: "" };
 
 /* IA (Claude) pour les textes d'affiches — facultatif : nécessite ANTHROPIC_API_KEY */
-const CLAUDE_KEY = process.env.ANTHROPIC_API_KEY || "";
-const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
+const CLAUDE_KEY = (process.env.ANTHROPIC_API_KEY || "").trim();
+const GEMINI_KEY = (process.env.GEMINI_API_KEY || "").trim();
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
 const AI_KEY = CLAUDE_KEY || GEMINI_KEY;
 const AI_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-5-5";
+let geminiModels = null;
+async function geminiCandidates() {
+  const fixed = [process.env.GEMINI_MODEL, "gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite-latest", "gemini-2.0-flash"].filter(Boolean);
+  if (geminiModels) return [...new Set([...fixed.filter(m => geminiModels.includes(m)), ...geminiModels])];
+  try {
+    const r = await fetch((process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com") + "/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": GEMINI_KEY }, signal: AbortSignal.timeout(15000) });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok && Array.isArray(d.models)) {
+      const ok = d.models.filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => String(m.name).replace(/^models\//, ""))
+        .filter(n => /gemini/.test(n) && !/(image|tts|audio|live|embedding|vision|exp|preview|thinking|robotics|computer|nano)/.test(n));
+      const score = n => (/flash/.test(n) ? 0 : 10) + (/lite/.test(n) ? 3 : 0) + (/latest/.test(n) ? 0 : 1);
+      geminiModels = ok.sort((a, b) => score(a) - score(b) || b.localeCompare(a, "en", { numeric: true }));
+      console.log("IA Gemini : modèles disponibles →", geminiModels.slice(0, 6).join(", "));
+    } else console.error("IA Gemini : liste des modèles impossible :", r.status, d && d.error && d.error.message);
+  } catch (e) { console.error("IA Gemini : liste des modèles impossible :", e.message); }
+  return geminiModels && geminiModels.length ? [...new Set([...fixed.filter(m => geminiModels.includes(m)), ...geminiModels])] : fixed;
+}
 async function askGemini(prompt, maxTokens, timeoutMs) {
-  const url = (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com") + "/v1beta/models/" + encodeURIComponent(GEMINI_MODEL) + ":generateContent";
-  const r = await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-goog-api-key": GEMINI_KEY },
-    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: maxTokens * 3, temperature: 0.8 } }),
-    signal: AbortSignal.timeout(timeoutMs),
-  });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) { console.error("IA Gemini :", r.status, d && d.error && d.error.message); throw Object.assign(new Error(r.status === 400 || r.status === 403 ? "Clé Gemini invalide : vérifiez GEMINI_API_KEY sur Render." : r.status === 429 ? "Quota gratuit de l'IA atteint pour le moment, réessayez dans quelques minutes." : "Le service d'IA ne répond pas, réessayez."), { status: 502 }); }
-  return ((d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts) || []).filter(p => p.text && !p.thought).map(p => p.text).join("\n");
+  const base = (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com") + "/v1beta/models/";
+  const models = (await geminiCandidates()).slice(0, 4); const t0 = Date.now(); let last = null;
+  for (const model of models) {
+    const left = timeoutMs - (Date.now() - t0); if (left < 8000) break;
+    let r, d;
+    try {
+      r = await fetch(base + encodeURIComponent(model) + ":generateContent", {
+        method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": GEMINI_KEY },
+        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: Math.min(maxTokens * 3, 60000), temperature: 0.8 } }),
+        signal: AbortSignal.timeout(left),
+      });
+      d = await r.json().catch(() => ({}));
+    } catch (e) { console.error("IA Gemini (" + model + ") :", e.message); last = { status: 0, msg: e.name === "TimeoutError" ? "délai dépassé" : e.message }; continue; }
+    if (r.ok) {
+      const txt = ((d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts) || []).filter(p => p.text && !p.thought).map(p => p.text).join("\n");
+      if (txt.trim()) { if (process.env.GEMINI_MODEL !== model) console.log("IA Gemini : réponse du modèle", model); return txt; }
+      last = { status: 200, msg: "réponse vide (" + ((d.candidates && d.candidates[0] && d.candidates[0].finishReason) || (d.promptFeedback && d.promptFeedback.blockReason) || "?") + ")" };
+      console.error("IA Gemini (" + model + ") :", last.msg); continue;
+    }
+    last = { status: r.status, msg: (d && d.error && d.error.message) || "" };
+    console.error("IA Gemini (" + model + ") :", r.status, last.msg);
+    if (r.status === 400 && /api key|API_KEY/i.test(last.msg)) break;
+    if (r.status === 401 || r.status === 403) break;
+    if (r.status === 404 && geminiModels) geminiModels = geminiModels.filter(m => m !== model);
+  }
+  const st = last ? last.status : 0;
+  const msg = st === 400 && /api key/i.test(last.msg) || st === 401 || st === 403 ? "Clé Gemini refusée : vérifiez GEMINI_API_KEY sur Render (sans espace avant ou après)."
+    : st === 429 ? "Quota gratuit de l'IA atteint pour le moment, réessayez dans quelques minutes."
+    : st === 503 || st === 500 ? "Les serveurs de Google sont surchargés, réessayez dans une minute."
+    : st === 0 ? "L'IA a mis trop de temps à répondre, réessayez (ou demandez une séance plus courte)."
+    : "Le service d'IA ne répond pas (code " + st + "), réessayez.";
+  throw Object.assign(new Error(msg), { status: 502 });
 }
 async function askClaude(prompt, maxTokens = 1200, timeoutMs = 45000) {
   if (!CLAUDE_KEY) return askGemini(prompt, maxTokens, timeoutMs);
