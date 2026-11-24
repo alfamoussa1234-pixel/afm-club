@@ -147,12 +147,28 @@ const MAX_MESSAGES = 500;
 const fil = async uid => (await store.get("fils", uid)) || { messages: [], readStaff: "", readJoueur: "" };
 
 /* IA (Claude) pour les textes d'affiches — facultatif : nécessite ANTHROPIC_API_KEY */
-const AI_KEY = process.env.ANTHROPIC_API_KEY || "";
+const CLAUDE_KEY = process.env.ANTHROPIC_API_KEY || "";
+const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
+const AI_KEY = CLAUDE_KEY || GEMINI_KEY;
 const AI_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-5-5";
+async function askGemini(prompt, maxTokens, timeoutMs) {
+  const url = (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com") + "/v1beta/models/" + encodeURIComponent(GEMINI_MODEL) + ":generateContent";
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-goog-api-key": GEMINI_KEY },
+    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: maxTokens * 3, temperature: 0.8 } }),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) { console.error("IA Gemini :", r.status, d && d.error && d.error.message); throw Object.assign(new Error(r.status === 400 || r.status === 403 ? "Clé Gemini invalide : vérifiez GEMINI_API_KEY sur Render." : r.status === 429 ? "Quota gratuit de l'IA atteint pour le moment, réessayez dans quelques minutes." : "Le service d'IA ne répond pas, réessayez."), { status: 502 }); }
+  return ((d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts) || []).filter(p => p.text && !p.thought).map(p => p.text).join("\n");
+}
 async function askClaude(prompt, maxTokens = 1200, timeoutMs = 45000) {
+  if (!CLAUDE_KEY) return askGemini(prompt, maxTokens, timeoutMs);
   const r = await fetch((process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com") + "/v1/messages", {
     method: "POST",
-    headers: { "content-type": "application/json", "x-api-key": AI_KEY, "anthropic-version": "2023-06-01" },
+    headers: { "content-type": "application/json", "x-api-key": CLAUDE_KEY, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({ model: AI_MODEL, max_tokens: maxTokens, messages: [{ role: "user", content: prompt }] }),
     signal: AbortSignal.timeout(timeoutMs),
   });
@@ -612,7 +628,7 @@ async function api(req, res, pathname) {
 
   // IA : création d'une séance d'entraînement (ou d'un exercice) avec schémas tactiques
   if (m === "POST" && seg[0] === "ia" && seg[1] === "seance") {
-    if (!AI_KEY) return fail(res, 503, "L'IA n'est pas encore activée : ajoutez la variable ANTHROPIC_API_KEY sur Render.");
+    if (!AI_KEY) return fail(res, 503, "L'IA n'est pas encore activée : ajoutez la variable GEMINI_API_KEY (gratuite) ou ANTHROPIC_API_KEY sur Render.");
     if (limited("ia-s:" + user.id, 20, 60 * 60e3)) return fail(res, 429, "Limite d'utilisation de l'IA atteinte pour l'heure, réessayez plus tard");
     const b = await readBody(req, 3e4);
     const t = (v, n = 300) => String(v ?? "").replace(/[\r\n]+/g, " ").trim().slice(0, n);
@@ -671,7 +687,7 @@ ${un ? "" : `La séance contient 4 à 6 exercices dans l'ordre : un échauffemen
 
   // IA : textes d'une affiche de match
   if (m === "POST" && seg[0] === "ia" && seg[1] === "affiche") {
-    if (!AI_KEY) return fail(res, 503, "L'IA n'est pas encore activée : ajoutez la variable ANTHROPIC_API_KEY sur Render.");
+    if (!AI_KEY) return fail(res, 503, "L'IA n'est pas encore activée : ajoutez la variable GEMINI_API_KEY (gratuite) ou ANTHROPIC_API_KEY sur Render.");
     if (limited("ia:" + user.id, 40, 60 * 60e3)) return fail(res, 429, "Limite d'utilisation de l'IA atteinte pour l'heure, réessayez plus tard");
     const b = await readBody(req, 2e4);
     const s = (await store.get("settings", "club")) || {};
