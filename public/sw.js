@@ -1,6 +1,6 @@
 /* AFM — service worker : permet l'installation et l'ouverture de l'application même avec une connexion faible.
    Les données du club (/api/...) ne sont jamais mises en cache : elles viennent toujours du serveur. */
-const CACHE = "afm-v4";
+const CACHE = "afm-v5";
 const SHELL = ["/", "/index.html", "/logo.png", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png", "/manifest.webmanifest"];
 
 self.addEventListener("install", e => {
