@@ -367,6 +367,18 @@ main{padding:22px 32px 60px;min-width:0}
   #svPrint{display:block!important}#svPrint .sv-slide{box-shadow:none;page-break-after:always;max-width:none;border-radius:0;padding:10mm}
   .sv-cover{-webkit-print-color-adjust:exact;print-color-adjust:exact}svg{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+.tag.live{background:#e11d48;color:#fff;animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+.live-card{background:linear-gradient(135deg,#7f1d1d,#1e1882 60%);color:#fff;border-radius:14px;padding:14px 18px;margin-bottom:16px;cursor:pointer;border-bottom:4px solid #e11d48;box-shadow:var(--sh)}
+.lv-top{display:flex;gap:10px;align-items:center}
+.lv-score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;text-align:center;font-family:"Barlow Condensed";font-size:24px;font-weight:700;margin-top:8px}
+.lv-score .sc{font-size:46px;font-weight:800;padding:0 16px}
+.lv-goals{text-align:center;color:#e4e4f7;font-size:13px;margin-top:4px}
+.live-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.live-btns>div{display:flex;flex-direction:column;gap:6px}
+.live-btns .btn{justify-content:center;padding:12px}
+.push-cta{display:flex;flex-direction:column;gap:6px;align-items:flex-start;background:var(--gold-l);border-bottom:1px solid #ecd98a;padding:12px 16px}
+.push-cta small{color:#5e4c00}
 .mob-top{display:none}
 .show-m{display:none}
 @media (max-width:980px){
@@ -605,6 +617,8 @@ function afterLogin() {
   setSync("ok", "Synchronisé");
   if (!routes().some(r => r.id === location.hash.slice(1))) location.hash = routes()[0].id;
   clearInterval(polling); polling = setInterval(poll, 15000);
+  setTimeout(syncPush, 1500);
+  clearInterval(window._tick); window._tick = setInterval(() => { if (!document.hidden && ME && !$("#ov").classList.contains("open")) render(); else if (LV && $("#ov").classList.contains("open") && $("#modal").innerHTML.includes("Score en direct")) liveRender(); }, 60000);
   render();
 }
 /* Écran de connexion */
@@ -634,12 +648,38 @@ async function doRegister(f) {
   btn.disabled = false;
 }
 fetch("/api/public").then(r => r.json()).then(d => { if (d && d.fansOuverts === false) { const t = $("#tabReg"); if (t) t.style.display = "none"; } }).catch(() => {});
-async function logout() { try { await api("POST", "logout"); } catch (e) {} ME = null; PREVIEW = null; LOADED = false; COLS.forEach(c => S[c] = []); S.comptes = []; S.users = []; showLogin(); }
+async function logout() { await pushUnsubscribe(); setBadge(0); try { await api("POST", "logout"); } catch (e) {} ME = null; PREVIEW = null; LOADED = false; COLS.forEach(c => S[c] = []); S.comptes = []; S.users = []; showLogin(); }
 
 /* ================= Calculs ================= */
 const pById = id => S.players.find(x => x.id === id);
 const pName = id => { const p = pById(id); return p ? `${p.prenom} ${p.nom}` : "Joueur inconnu"; };
-const isPlayed = m => m.butsPour !== "" && m.butsPour != null && m.butsContre !== "" && m.butsContre != null;
+const hasScore = m => m.butsPour !== "" && m.butsPour != null && m.butsContre !== "" && m.butsContre != null;
+const MATCH_WINDOW = 120; // minutes entre le coup d'envoi et la fin estimée (90 min + mi-temps + arrêts de jeu)
+const kickoff = m => m.date && m.heure ? new Date(`${m.date}T${m.heure}:00`) : null;
+/** Statut calculé selon la date et l'heure : avenir, jour (aujourd'hui, heure inconnue), encours, termine, reporte, annule */
+function matchStatus(m) {
+  if (m.statut === "Reporté") return "reporte"; if (m.statut === "Annulé") return "annule";
+  if (!m.date) return "avenir";
+  if (m.fin) return "termine";
+  const k = kickoff(m), now = new Date();
+  if (!k) { const t = today(); return m.date > t ? "avenir" : m.date < t || hasScore(m) ? "termine" : "jour"; }
+  if (now < k) return "avenir";
+  if (now - k < MATCH_WINDOW * 60000) return "encours";
+  return "termine";
+}
+/** Minute de jeu estimée pendant le direct */
+function liveMinute(m) {
+  const k = kickoff(m); if (!k) return ""; const e = Math.floor((Date.now() - k) / 60000);
+  if (e < 0) return ""; if (e <= 45) return Math.max(1, e) + "'"; if (e < 60) return "Mi-temps"; if (e <= 105) return (e - 15) + "'"; return "90'+";
+}
+const isLive = m => matchStatus(m) === "encours";
+const liveMatches = () => S.matches.filter(isLive);
+const isPlayed = m => hasScore(m) && matchStatus(m) === "termine";
+const statusTag = m => { const s = matchStatus(m);
+  if (s === "encours") return `<span class="tag live">● EN DIRECT ${esc(liveMinute(m))}</span>`;
+  if (s === "reporte") return `<span class="tag t-gold">Reporté</span>`; if (s === "annule") return `<span class="tag t-red">Annulé</span>`;
+  if (s === "termine" && !hasScore(m)) return `<span class="tag t-gold">Terminé · score à saisir</span>`;
+  if (s === "jour") return `<span class="tag t-blue">Aujourd'hui</span>`; return `<span class="tag t-grey">À jouer</span>`; };
 const played = () => S.matches.filter(isPlayed);
 const result = m => { const a = +m.butsPour, b = +m.butsContre; return a > b ? "V" : a < b ? "D" : "N"; };
 function bilan() { const r = { J: 0, V: 0, N: 0, D: 0, BP: 0, BC: 0 }; played().forEach(m => { r.J++; r[result(m)]++; r.BP += +m.butsPour; r.BC += +m.butsContre; }); r.pts = r.V * 3 + r.N; return r; }
@@ -656,7 +696,7 @@ const leaderList = (rows, unit) => rows.length ? `<div class="list">${rows.map((
 function presence() { const t = S.trainings.filter(x => x.date <= today() && (x.pointe || (x.presents || []).length || Object.keys(x.pointage || {}).length)); const g = {}; t.forEach(x => (x.presents || []).forEach(id => g[id] = (g[id] || 0) + 1)); return { total: t.length, by: g, list: t }; }
 function caisse() { let rec = 0, dep = 0; S.finances.forEach(f => { if (f.type === "recette") rec += +f.montant || 0; else dep += +f.montant || 0; }); return { rec, dep, solde: rec - dep }; }
 const sortedMatches = () => [...S.matches].sort((a, b) => (a.date + (a.heure || "")).localeCompare(b.date + (b.heure || "")));
-const upcomingMatches = () => sortedMatches().filter(m => !isPlayed(m) && m.date >= today());
+const upcomingMatches = () => sortedMatches().filter(m => ["avenir", "jour"].includes(matchStatus(m)));
 const upcomingTrainings = () => [...S.trainings].filter(t => t.date >= today()).sort((a, b) => (a.date + (a.heure || "")).localeCompare(b.date + (b.heure || "")));
 /* Demandes */
 const decisionOf = id => S.decisions.find(d => d.id === id);
@@ -717,6 +757,7 @@ function renderChrome() {
     (isStandalone() ? "" : `<button class="btn gold sm" onclick="installApp()">📲 Installer l'application</button>`) + `<button class="btn ghost-w sm" onclick="logout()">Se déconnecter</button><div><span class="dot ${MODE === "ok" ? "ok" : MODE === "err" ? "local" : ""}"></span>${esc(SYNC)}</div>`;
   const n = notifItems().filter(x => x.ts > lastSeen()).length;
   $("#bell").innerHTML = I.bell + (n ? `<span class="badge">${n > 9 ? "9+" : n}</span>` : "");
+  setBadge(n);
   // Identité
   const c = myCompte(); const p = pById(c.playerId);
   $("#meBox").innerHTML = (isAdminView() ? `<span>${esc(ME ? ME.nom || ME.username : "")}</span><span class="tag t-pri">${esc(ROLE_LABEL[ME.role] || "")}</span>` : VIEW() === "fan" ? `<span>${esc(PREVIEW ? "Aperçu fan" : ME.nom || "Supporter")}</span><span class="tag t-gold">Supporter</span>` : (p ? `<span>${esc(p.prenom)} ${esc(p.nom)}</span><span class="jersey" style="width:28px;height:28px;font-size:15px">${esc(p.numero || "–")}</span>` : `<span>${esc(ME ? ME.username : "")}</span>`));
@@ -763,7 +804,7 @@ function notifItems() {
 }
 function renderNotif() {
   const seen = lastSeen(), items = notifItems();
-  $("#np").innerHTML = `<header><b>Notifications</b><button class="icon-btn" onclick="closeNotif()">${I.x}</button></header>` +
+  $("#np").innerHTML = `<header><b>Notifications</b><button class="icon-btn" onclick="closeNotif()">${I.x}</button></header>` + pushPrompt() +
     (items.length ? items.map(x => `<a class="ni ${x.ts > seen ? "new" : ""}" href="${x.href}"><span class="ic tag ${x.cls}" style="padding:0">${I[x.ic]}</span><div><b>${esc(x.title)}</b><small>${esc(x.sub)}</small><small>${ago(x.ts)}</small></div></a>`).join("") : empty("Aucune notification", "bell"));
 }
 let NOTIF_SEEN_AT = null;
@@ -838,7 +879,7 @@ function vPHome() {
   const g = goalsBy(), mp = matchesPlayedBy(), pr = presence();
   const ann = sortedAnn().slice(0, 3); const mine = [...(c.demandes || [])].sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")).slice(0, 3);
   const tr = upcomingTrainings().slice(0, 3);
-  return `<div class="hero"><img src="logo.png" alt=""><div><h1>${p ? "Bonjour " + esc(p.prenom) + " !" : "Espace joueur"}</h1><p>${nom} · Saison ${esc(S.settings.saison || "")}</p></div></div>` + (link ||
+  return liveCards() + `<div class="hero"><img src="logo.png" alt=""><div><h1>${p ? "Bonjour " + esc(p.prenom) + " !" : "Espace joueur"}</h1><p>${nom} · Saison ${esc(S.settings.saison || "")}</p></div></div>` + (link ||
   `<div class="grid three kpi3" style="margin-bottom:16px">
     <div class="card kpi accent"><div class="lab">Mes buts</div><div class="val">${g[p.id] || 0}</div><div class="sub">${assistsBy()[p.id] || 0} passe(s) décisive(s)</div></div>
     <div class="card kpi"><div class="lab">Matchs joués</div><div class="val">${mp[p.id] || 0}</div><div class="sub">sur ${played().length} disputés</div></div>
@@ -914,8 +955,9 @@ function vDash() {
   const nom = esc(S.settings.nom || "AFM");
   const pend = allDemandes().filter(d => statusOf(d.id) === "En attente");
   const absNext = nx ? allDemandes().filter(d => statusOf(d.id) !== "Refusée" && (d.eventId === nx.id || (!d.eventId && d.date <= nx.date && (d.dateFin || d.date) >= nx.date))) : [];
-  return `<div class="hero"><img src="logo.png" alt=""><div><h1>${nom}</h1><p>Afrique Football Management · Saison ${esc(S.settings.saison || "")}</p></div></div>` +
-  (pend.length ? `<div class="banner"><span><b>${pend.length}</b> absence(s) déclarée(s) en attente de traitement.</span><a class="btn sm" href="#demandes">Traiter</a></div>` : "") + `
+  return liveCards() + `<div class="hero"><img src="logo.png" alt=""><div><h1>${nom}</h1><p>Afrique Football Management · Saison ${esc(S.settings.saison || "")}</p></div></div>` +
+  (pend.length ? `<div class="banner"><span><b>${pend.length}</b> absence(s) déclarée(s) en attente de traitement.</span><a class="btn sm" href="#demandes">Traiter</a></div>` : "") +
+  S.matches.filter(m => matchStatus(m) === "termine" && !hasScore(m)).map(m => `<div class="banner"><span>Le match contre <b>${esc(m.adversaire)}</b> (${fmtDate(m.date)}) est terminé : saisissez le score final.</span><button class="btn sm" onclick="openForm('matches','${m.id}')">Saisir le score</button></div>`).join("") + `
   <div class="grid kpis">
     <div class="card kpi accent"><div class="lab">Effectif</div><div class="val">${S.players.length}</div><div class="sub">${act} actifs · ${inj.length} indisponible(s)</div></div>
     <div class="card kpi"><div class="lab">Bilan</div><div class="val">${b.V}<span class="muted" style="font-size:22px"> V </span>${b.N}<span class="muted" style="font-size:22px"> N </span>${b.D}<span class="muted" style="font-size:22px"> D</span></div><div class="sub">${b.J} match(s) joué(s) · ${b.pts} pts</div></div>
@@ -985,7 +1027,7 @@ function vMatches() {
   <div class="card wrap">${list.length ? `<table class="tbl"><thead><tr><th>Date</th><th>Adversaire</th><th class="hide-m">Compétition</th><th>Lieu</th><th class="num">Score</th><th class="hide-m">Buteurs</th><th class="hide-m">Compo</th><th></th></tr></thead><tbody>
   ${list.map(m => { const p = isPlayed(m); return `<tr><td><b>${fmtDate(m.date)}</b><br><small class="muted">${esc(m.heure || "")}</small></td><td><a href="#" onclick="event.preventDefault();openMatch('${m.id}')" style="color:inherit;font-weight:700">${esc(m.adversaire)}</a><br><small class="muted">Voir la fiche du match</small></td><td class="hide-m">${esc(m.competition || "—")}</td>
   <td><span class="tag ${m.lieu === "Domicile" ? "t-pri" : "t-blue"}">${esc(m.lieu || "—")}</span></td>
-  <td class="num">${p ? `<span class="score">${m.butsPour} – ${m.butsContre}</span> <span class="res ${result(m)}">${result(m)}</span>` : `<span class="tag t-grey">À jouer</span>`}</td>
+  <td class="num">${p ? `<span class="score">${m.butsPour} – ${m.butsContre}</span> <span class="res ${result(m)}">${result(m)}</span>` : isLive(m) ? `<span class="score">${+m.butsPour || 0} – ${+m.butsContre || 0}</span> ${statusTag(m)}${canWrite && isAdminView() ? `<br><button class="btn danger sm" style="margin-top:4px" onclick="openLive('${m.id}')">Score en direct</button>` : ""}` : statusTag(m)}</td>
   <td class="hide-m"><small>${scorersText(m) || "—"}</small></td><td class="hide-m">${m.compo && (m.compo.titulaires || []).length ? `<span class="tag ${m.compo.public === false ? "t-grey" : "t-green"}">${esc(m.compo.formation)}${m.compo.public === false ? " · cachée" : ""}</span>` : "—"}</td>${canWrite && isAdminView() ? `<td class="act"><button class="icon-btn" title="Composition d'équipe" onclick="openCompo('${m.id}')">${I.shirt}</button><button class="icon-btn" title="Créer l'affiche" onclick="openPoster('${m.id}')">${I.poster}</button><button class="icon-btn" title="Modifier" onclick="openForm('matches','${m.id}')">${I.edit}</button><button class="icon-btn" title="Supprimer" onclick="askDelete('matches','${m.id}')">${I.trash}</button></td>` : "<td></td>"}</tr>`; }).join("")}
   </tbody></table>` : empty("Aucun match dans cette liste")}</div>`;
 }
@@ -1050,13 +1092,13 @@ function openMatch(id) {
   const staff = canWrite && isAdminView();
   $("#modal").classList.add("wide");
   $("#modal").innerHTML = `<header><h2>Fiche du match</h2><button class="icon-btn" onclick="closeModal()">${I.x}</button></header><div class="body" style="display:block">
-  <div class="match-head"><div class="tm">${L}</div><div><div class="sc">${p ? `${sl} - ${sr}` : "VS"}</div>${p ? `<span class="res ${result(m)}" style="margin-top:6px">${result(m)}</span>` : ""}</div><div class="tm">${R}</div></div>
+  <div class="match-head"><div class="tm">${L}</div><div><div class="sc">${p || isLive(m) ? `${+sl || 0} - ${+sr || 0}` : "VS"}</div>${p ? `<span class="res ${result(m)}" style="margin-top:6px">${result(m)}</span>` : `<div style="margin-top:6px">${statusTag(m)}</div>`}</div><div class="tm">${R}</div></div>
   <p class="muted" style="text-align:center;margin:8px 0 14px">${esc(m.competition || "Match")} · ${fmtDay(m.date)}${m.heure ? " · " + esc(m.heure) : ""}${m.stade ? " · " + esc(m.stade) : ""}</p>
-  ${p ? `<h3 style="font-size:20px;margin:0 0 6px">Buts de ${nom}</h3>${goals.length ? goals.map(g => `<div class="goal-line"><span class="mn">${g.minute ? esc(g.minute) + "'" : "⚽"}</span><div><b>${g.playerId === "csc" ? "But contre son camp" : esc(pName(g.playerId))}</b>${g.passeurId ? `<br><small class="muted">🅰 Passe décisive : ${esc(pName(g.passeurId))}</small>` : ""}</div></div>`).join("") : `<p class="muted">${+m.butsPour ? "Buteurs non renseignés." : "Aucun but marqué."}</p>`}` : ""}
+  ${p || isLive(m) ? `<h3 style="font-size:20px;margin:0 0 6px">Buts de ${nom}</h3>${goals.length ? goals.map(g => `<div class="goal-line"><span class="mn">${g.minute ? esc(g.minute) + "'" : "⚽"}</span><div><b>${g.playerId === "csc" ? "But contre son camp" : esc(pName(g.playerId))}</b>${g.passeurId ? `<br><small class="muted">🅰 Passe décisive : ${esc(pName(g.passeurId))}</small>` : ""}</div></div>`).join("") : `<p class="muted">${+m.butsPour ? "Buteurs non renseignés." : "Aucun but marqué."}</p>`}` : ""}
   <h3 style="font-size:20px;margin:18px 0 8px;display:flex;justify-content:space-between;align-items:center">Composition ${showCompo ? `<span class="tag t-pri">${esc(c.formation)}</span>` : ""}</h3>
   ${showCompo ? `${c.public === false ? `<p class="banner" style="margin-bottom:10px">Composition cachée : seuls les dirigeants la voient.</p>` : ""}${pitchHTML(c)}
     ${(c.remplacants || []).length ? `<div style="margin-top:12px"><b>Remplaçants :</b> ${c.remplacants.filter(pById).map(id => esc(pName(id))).join(", ")}</div>` : ""}` : `<p class="muted">La composition n'a pas encore été publiée.</p>`}
-  </div><footer>${staff ? `<button class="btn ghost" onclick="openCompo('${m.id}')">${I.shirt.replace("<svg", '<svg width="15" height="15"')} Composition</button><button class="btn ghost" onclick="openForm('matches','${m.id}')">Modifier le match</button>` : ""}<button class="btn" onclick="closeModal()">Fermer</button></footer>`;
+  </div><footer>${staff && isLive(m) ? `<button class="btn danger" onclick="openLive('${m.id}')">● Score en direct</button>` : ""}${staff ? `<button class="btn ghost" onclick="openCompo('${m.id}')">${I.shirt.replace("<svg", '<svg width="15" height="15"')} Composition</button><button class="btn ghost" onclick="openForm('matches','${m.id}')">Modifier le match</button>` : ""}<button class="btn" onclick="closeModal()">Fermer</button></footer>`;
   $("#ov").classList.add("open");
 }
 
@@ -1227,6 +1269,52 @@ function svStep(d) { SV.i += d; svRender(); }
 function closeSeanceView() { $("#seanceView").classList.remove("open"); }
 document.addEventListener("keydown", e => { if (!$("#seanceView") || !$("#seanceView").classList.contains("open")) return; if (e.key === "ArrowRight") svStep(1); if (e.key === "ArrowLeft") svStep(-1); if (e.key === "Escape") closeSeanceView(); });
 
+/* ================= Score en direct ================= */
+let LV = null;
+function openLive(id) {
+  const m = S.matches.find(x => x.id === id); if (!m) return; LV = { id, adding: false };
+  $("#modal").classList.add("wide"); liveRender(); $("#ov").classList.add("open");
+}
+function liveRender() {
+  const m = S.matches.find(x => x.id === LV.id); if (!m) return closeModal();
+  const nom = esc(S.settings.nom || "AFM"), goals = matchGoals(m), min = (liveMinute(m).match(/\d+/) || [""])[0];
+  const ps = [...S.players].filter(p => p.statut !== "Inactif").sort((a, b) => a.nom.localeCompare(b.nom));
+  const cp = m.compo && (m.compo.titulaires || []).length ? new Set([...m.compo.titulaires.map(t => t.playerId), ...(m.compo.remplacants || [])]) : null;
+  const plist = cp ? ps.filter(p => cp.has(p.id)) : ps;
+  $("#modal").innerHTML = `<header><h2>Score en direct · ${esc(m.adversaire)}</h2><button class="icon-btn" onclick="closeModal()">${I.x}</button></header><div class="body" style="display:block">
+  <div class="match-head"><div class="tm">${nom}</div><div><div class="sc">${+m.butsPour || 0} - ${+m.butsContre || 0}</div><div style="margin-top:6px">${statusTag(m)}</div></div><div class="tm">${esc(m.adversaire)}</div></div>
+  <div class="live-btns"><div><button class="btn ok" onclick="LV.adding=true;liveRender()">⚽ But ${nom}</button><button class="btn ghost sm" onclick="liveUndo('pour')" ${+m.butsPour ? "" : "disabled"}>Annuler le dernier</button></div>
+  <div><button class="btn danger" onclick="liveGoal('contre')">⚽ But ${esc(m.adversaire)}</button><button class="btn ghost sm" onclick="liveUndo('contre')" ${+m.butsContre ? "" : "disabled"}>Annuler le dernier</button></div></div>
+  ${LV.adding ? `<div class="card" style="margin-top:12px"><h3>But de ${nom}</h3><div style="display:grid;grid-template-columns:1fr 1fr 90px;gap:8px">
+    <select class="input" id="lvP"><option value="">— Buteur —</option>${plist.map(p => `<option value="${p.id}">${esc(p.prenom)} ${esc(p.nom)}</option>`).join("")}<option value="csc">But contre son camp</option></select>
+    <select class="input" id="lvA"><option value="">— Sans passe —</option>${plist.map(p => `<option value="${p.id}">🅰 ${esc(p.prenom)} ${esc(p.nom)}</option>`).join("")}</select>
+    <input class="input" id="lvM" type="number" min="1" max="130" value="${esc(min)}" placeholder="min"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="btn ghost sm" onclick="LV.adding=false;liveRender()">Annuler</button><button class="btn ok sm" onclick="liveGoal('pour')">Valider le but</button></div></div>` : ""}
+  ${goals.length ? `<div style="margin-top:12px">${goals.map(g => `<div class="goal-line"><span class="mn">${g.minute ? esc(g.minute) + "'" : "⚽"}</span><div><b>${g.playerId === "csc" ? "But contre son camp" : esc(pName(g.playerId))}</b>${g.passeurId ? `<br><small class="muted">🅰 ${esc(pName(g.passeurId))}</small>` : ""}</div></div>`).join("")}</div>` : ""}
+  <p class="muted" style="font-size:12.5px;margin-top:12px">Chaque but est visible immédiatement par les joueurs et les fans, et envoyé en notification sur leur téléphone. Le match passe automatiquement en « Terminé » ${MATCH_WINDOW} minutes après le coup d'envoi.</p>
+  </div><footer><button class="btn ghost" onclick="liveEnd()">Siffler la fin du match</button><button class="btn" onclick="closeModal()">Fermer</button></footer>`;
+}
+function liveSave(m) { const agg = k => { const c = {}; (m.buts || []).forEach(g => { if (g[k] && g[k] !== "csc") c[g[k]] = (c[g[k]] || 0) + 1; }); return c; };
+  m.buteurs = Object.entries(agg("playerId")).map(([playerId, buts]) => ({ playerId, buts })); m.passeurs = Object.entries(agg("passeurId")).map(([playerId, passes]) => ({ playerId, passes }));
+  m.updatedAt = nowIso(); saveItem("matches", m); liveRender(); }
+function liveGoal(side) {
+  const m0 = S.matches.find(x => x.id === LV.id); if (!m0) return; const m = { ...m0, buts: [...matchGoals(m0)] };
+  if (side === "pour") { const p = $("#lvP").value; if (!p) { toast("Choisissez le buteur"); return; } const a = $("#lvA").value; m.buts.push({ playerId: p, passeurId: a && a !== p ? a : "", minute: $("#lvM").value || "" }); m.butsPour = String((+m0.butsPour || 0) + 1); if (m.butsContre === "" || m.butsContre == null) m.butsContre = "0"; LV.adding = false; }
+  else { m.butsContre = String((+m0.butsContre || 0) + 1); if (m.butsPour === "" || m.butsPour == null) m.butsPour = "0"; }
+  liveSave(m); toast("But enregistré");
+}
+function liveUndo(side) {
+  const m0 = S.matches.find(x => x.id === LV.id); if (!m0) return; const m = { ...m0, buts: [...matchGoals(m0)] };
+  if (side === "pour" && +m.butsPour > 0) { m.butsPour = String(+m.butsPour - 1); m.buts.pop(); }
+  if (side === "contre" && +m.butsContre > 0) m.butsContre = String(+m.butsContre - 1);
+  liveSave(m);
+}
+function liveEnd() {
+  const m0 = S.matches.find(x => x.id === LV.id); if (!m0) return;
+  const m = { ...m0, fin: nowIso(), butsPour: m0.butsPour === "" || m0.butsPour == null ? "0" : m0.butsPour, butsContre: m0.butsContre === "" || m0.butsContre == null ? "0" : m0.butsContre, updatedAt: nowIso() };
+  saveItem("matches", m); closeModal(); toast("Match terminé");
+}
+
 /* ================= Activités du club + pointage ================= */
 const ACT_TYPES = ["Entraînement", "Réunion", "Stage", "Événement", "Séance vidéo", "Autre"];
 const PT_LABELS = { P: "Présent", R: "Retard", A: "Absent", E: "Excusé" };
@@ -1336,6 +1424,7 @@ function vSettings() {
     <h3>Application mobile et ordinateur</h3>
     <p class="muted" style="margin:0 0 10px">L'application s'installe sur tous les téléphones (Android, iPhone) et ordinateurs (Windows, Mac), directement depuis le navigateur, sans passer par un store. Transmettez simplement l'adresse <b>${esc(location.origin)}</b> à vos joueurs.</p>
     <button class="btn" onclick="installApp()">📲 Installer / voir la marche à suivre</button>
+    <div style="margin-top:12px">${pushPrompt(true) || ""}</div>
   </div>
   <div class="card" style="max-width:640px;margin-top:16px">
     <h3>Données</h3>
@@ -1410,6 +1499,7 @@ function openMyAccount() {
   <label class="full">Mot de passe actuel<input class="input" type="password" name="ancien" required autocomplete="current-password"></label>
   <label>Nouveau mot de passe<input class="input" type="password" name="nouveau" required minlength="6" autocomplete="new-password"></label>
   <label>Confirmer<input class="input" type="password" name="confirm" required minlength="6" autocomplete="new-password"></label>
+  <div class="full">${pushPrompt(true)}</div>
   ${ME.role === "fan" ? `<p class="full" style="margin:0;font-size:12.5px"><a href="#" style="color:var(--red)" onclick="event.preventDefault();askDeleteMe()">Supprimer mon compte fan</a></p>` : ""}</div>
   <footer><button type="button" class="btn ghost" onclick="logout()">Se déconnecter</button><button class="btn">Changer le mot de passe</button></footer></form>`;
   $("#ov").classList.add("open");
@@ -1487,7 +1577,7 @@ function openForm(col, id) {
     body = field("Adversaire *", inp("adversaire", m.adversaire, "text", "required"), true) +
       field("Date *", inp("date", m.date, "date", "required")) + field("Heure", inp("heure", m.heure, "time")) +
       field("Lieu", `<select class="input" name="lieu">${opt(["Domicile", "Extérieur", "Neutre"], m.lieu)}</select>`) + field("Compétition", `<select class="input" name="competition">${opt(["Championnat", "Coupe", "Amical", "Tournoi"], m.competition)}</select>`) +
-      field("Stade", inp("stade", m.stade), true) +
+      field("Stade", inp("stade", m.stade)) + field("Statut", `<select class="input" name="statut"><option value="">Automatique (selon la date et l'heure)</option>${["Reporté", "Annulé"].map(x => `<option ${m.statut === x ? "selected" : ""}>${x}</option>`).join("")}</select>`) +
       field(`Buts ${esc(S.settings.nom || "AFM")}`, inp("butsPour", m.butsPour, "number", 'min="0" placeholder="Vide si non joué"')) + field("Buts adversaire", inp("butsContre", m.butsContre, "number", 'min="0"')) +
       `<div class="full"><div class="flabel" style="margin-bottom:6px">Buts de ${esc(S.settings.nom || "AFM")} : buteur, passeur décisif, minute</div><div id="scorers">${matchGoals(m).map(g => goalRow(g)).join("")}</div><button type="button" class="btn ghost sm" onclick="addScorer()">${I.plus} Ajouter un but</button></div>` +
       `<div class="full"><div class="flabel" style="margin-bottom:6px">Joueurs convoqués / ayant joué</div>${playerChecks("convoques", m.convoques || [])}</div>`;
@@ -2050,13 +2140,23 @@ async function posterToGallery() {
 }
 
 /* ================= Espace fans ================= */
+function liveCards() {
+  const lv = liveMatches(); if (!lv.length) return "";
+  const nom = esc(S.settings.nom || "AFM");
+  return lv.map(m => { const home = m.lieu !== "Extérieur"; const [L, R] = home ? [nom, esc(m.adversaire)] : [esc(m.adversaire), nom]; const [sl, sr] = home ? [+m.butsPour || 0, +m.butsContre || 0] : [+m.butsContre || 0, +m.butsPour || 0];
+    const goals = matchGoals(m);
+    return `<div class="live-card" onclick="openMatch('${m.id}')"><div class="lv-top"><span class="tag live">● EN DIRECT</span><b>${esc(liveMinute(m))}</b><span class="muted" style="color:#c3c3ee">${esc(m.competition || "")}</span></div>
+    <div class="lv-score"><div>${L}</div><div class="sc">${sl} - ${sr}</div><div>${R}</div></div>
+    ${goals.length ? `<div class="lv-goals">${goals.map(g => `⚽ ${g.minute ? esc(g.minute) + "' " : ""}${g.playerId === "csc" ? "CSC" : esc(pName(g.playerId))}`).join(" · ")}</div>` : ""}
+    ${canWrite && isAdminView() ? `<div style="text-align:center;margin-top:10px"><button class="btn gold sm" onclick="event.stopPropagation();openLive('${m.id}')">Mettre à jour le score</button></div>` : ""}</div>`; }).join("");
+}
 function vFHome() {
   const nx = upcomingMatches()[0]; const nom = esc(S.settings.nom || "AFM");
   const last = sortedMatches().filter(isPlayed).reverse().slice(0, 4);
   const ann = sortedAnn().slice(0, 3); const b = bilan();
   const gal = [...S.galerie].sort((a, c) => (c.date || "").localeCompare(a.date || "")).slice(0, 6); window._galHome = gal;
   const tro = S.trophees.filter(x => x.rang === "Vainqueur").length;
-  return `<div class="hero"><img src="logo.png" alt=""><div><h1>${PREVIEW ? "Bienvenue, supporter !" : "Bienvenue " + esc((ME.nom || "").split(" ")[0]) + " !"}</h1><p>Espace fans · ${nom} · Saison ${esc(S.settings.saison || "")}</p></div></div>
+  return liveCards() + `<div class="hero"><img src="logo.png" alt=""><div><h1>${PREVIEW ? "Bienvenue, supporter !" : "Bienvenue " + esc((ME.nom || "").split(" ")[0]) + " !"}</h1><p>Espace fans · ${nom} · Saison ${esc(S.settings.saison || "")}</p></div></div>
   <div class="grid kpis" style="margin-bottom:16px">
     <div class="card kpi accent"><div class="lab">Bilan de la saison</div><div class="val">${b.V}<span style="font-size:20px;opacity:.7"> V </span>${b.N}<span style="font-size:20px;opacity:.7"> N </span>${b.D}<span style="font-size:20px;opacity:.7"> D</span></div><div class="sub">${b.J} match(s) joué(s)</div></div>
     <div class="card kpi"><div class="lab">Buts marqués</div><div class="val">${b.BP}</div><div class="sub">${b.BC} encaissé(s)</div></div>
@@ -2089,6 +2189,41 @@ function vFEffectif() {
   const plural = { Gardien: "Gardiens", "Défenseur": "Défenseurs", Milieu: "Milieux", Attaquant: "Attaquants" };
   return `<div class="top"><div><h1>Effectif</h1><p>Les joueurs de l'AFM · saison ${esc(S.settings.saison || "")}</p></div></div>` +
     (groups.length ? groups.map(([po, ps]) => `<h2 style="margin:18px 0 10px;font-size:22px">${plural[po] || po}</h2><div class="lib-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">${ps.map(p => `<div class="pcard"><div class="ph">${p.photo ? `<img src="/media/${esc(p.photo)}" alt="" loading="lazy"><span class="nb">${esc(p.numero || "")}</span>` : `<span class="num">${esc(p.numero || "–")}</span>`}</div><div class="bd"><b>${esc(p.prenom)} ${esc(p.nom)}</b><small>${esc(p.poste || "")}${g[p.id] ? ` · ⚽ ${g[p.id]}` : ""}${ast[p.id] ? ` · 🅰 ${ast[p.id]}` : ""}</small></div></div>`).join("")}</div>`).join("") : `<div class="card">${empty("L'effectif sera bientôt présenté ici.", "users")}</div>`);
+}
+
+/* ================= Notifications push + badge ================= */
+const pushSupported = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+function setBadge(n) {
+  try { document.title = (n ? `(${n}) ` : "") + "AFM — Gestion du club"; } catch (e) {}
+  try { if (navigator.setAppBadge) { n ? navigator.setAppBadge(n) : navigator.clearAppBadge(); } } catch (e) {}
+}
+const b64ToU8 = s => { const p = "=".repeat((4 - s.length % 4) % 4); const b = atob((s + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+async function pushSubscribe() {
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) { const { key } = await api("GET", "push/key"); sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(key) }); }
+  await api("POST", "push/subscribe", { endpoint: sub.endpoint });
+  return sub;
+}
+async function syncPush() { try { if (pushSupported() && Notification.permission === "granted") await pushSubscribe(); } catch (e) {} renderChrome(); }
+async function pushUnsubscribe() { try { if (!pushSupported()) return; const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && await reg.pushManager.getSubscription(); if (sub) { await api("POST", "push/unsubscribe", { endpoint: sub.endpoint }).catch(() => {}); await sub.unsubscribe(); } } catch (e) {} }
+async function enablePush() {
+  if (!pushSupported()) { toast(isIOS() ? "Sur iPhone, installez d'abord l'application (Partager → Sur l'écran d'accueil), puis ouvrez-la depuis l'icône." : "Ce navigateur ne permet pas les notifications. Utilisez Chrome."); return; }
+  if (isIOS() && !isStandalone()) { toast("Sur iPhone, installez d'abord l'application sur l'écran d'accueil, puis activez les notifications depuis l'icône AFM."); return; }
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") { toast("Notifications refusées. Vous pouvez les autoriser dans les réglages du navigateur."); renderChrome(); if ($("#np").classList.contains("open")) renderNotif(); return; }
+    await pushSubscribe(); await api("POST", "push/test"); toast("Notifications activées sur cet appareil 🔔");
+  } catch (e) { toast(e && e.status ? e.message : "Activation impossible sur cet appareil (téléphone sans services Google ?)"); }
+  renderChrome(); if ($("#np").classList.contains("open")) renderNotif();
+}
+function pushPrompt(full) {
+  if (PREVIEW) return "";
+  if (!pushSupported()) return full ? `<p class="muted" style="font-size:12.5px;margin:0">🔔 ${isIOS() && !isStandalone() ? "Pour recevoir les notifications sur iPhone, installez l'application sur l'écran d'accueil puis ouvrez-la depuis l'icône." : "Les notifications ne sont pas disponibles sur ce navigateur."}</p>` : "";
+  const p = Notification.permission;
+  if (p === "granted") return full ? `<p style="margin:0;font-size:13px">🔔 <b>Notifications activées</b> sur cet appareil. <a href="#" style="color:var(--pri)" onclick="event.preventDefault();api('POST','push/test').then(()=>toast('Notification de test envoyée'))">Envoyer un test</a></p>` : "";
+  if (p === "denied") return `<div class="push-cta"><b>🔕 Notifications bloquées</b><small>Autorisez-les dans les réglages du navigateur (icône 🔒 à côté de l'adresse → Notifications).</small></div>`;
+  return `<div class="push-cta"><b>🔔 Recevez les notifications sur ce téléphone</b><small>Annonces, messages, buts en direct… même quand l'application est fermée.</small><button class="btn sm gold" onclick="enablePush()">Activer</button></div>`;
 }
 
 /* ================= Installation (PWA) ================= */
