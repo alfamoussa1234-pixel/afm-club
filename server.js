@@ -149,12 +149,12 @@ const fil = async uid => (await store.get("fils", uid)) || { messages: [], readS
 /* IA (Claude) pour les textes d'affiches — facultatif : nécessite ANTHROPIC_API_KEY */
 const AI_KEY = process.env.ANTHROPIC_API_KEY || "";
 const AI_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-5-5";
-async function askClaude(prompt) {
+async function askClaude(prompt, maxTokens = 1200, timeoutMs = 45000) {
   const r = await fetch((process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com") + "/v1/messages", {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": AI_KEY, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: AI_MODEL, max_tokens: 1200, messages: [{ role: "user", content: prompt }] }),
-    signal: AbortSignal.timeout(45000),
+    body: JSON.stringify({ model: AI_MODEL, max_tokens: maxTokens, messages: [{ role: "user", content: prompt }] }),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) { console.error("IA :", r.status, d && d.error && d.error.message); throw Object.assign(new Error(r.status === 401 ? "Clé IA invalide : vérifiez ANTHROPIC_API_KEY sur Render." : r.status === 429 ? "L'IA est momentanément saturée, réessayez dans une minute." : "Le service d'IA ne répond pas, réessayez."), { status: 502 }); }
@@ -608,6 +608,65 @@ async function api(req, res, pathname) {
       return send(res, 200, { ok: true });
     }
     if (m === "DELETE") { await store.del("suggestions", seg[1]); return send(res, 200, { ok: true }); }
+  }
+
+  // IA : création d'une séance d'entraînement (ou d'un exercice) avec schémas tactiques
+  if (m === "POST" && seg[0] === "ia" && seg[1] === "seance") {
+    if (!AI_KEY) return fail(res, 503, "L'IA n'est pas encore activée : ajoutez la variable ANTHROPIC_API_KEY sur Render.");
+    if (limited("ia-s:" + user.id, 20, 60 * 60e3)) return fail(res, 429, "Limite d'utilisation de l'IA atteinte pour l'heure, réessayez plus tard");
+    const b = await readBody(req, 3e4);
+    const t = (v, n = 300) => String(v ?? "").replace(/[\r\n]+/g, " ").trim().slice(0, n);
+    const un = b.mode === "exercice";
+    hit("ia-s:" + user.id);
+    const prompt = `Tu es un entraîneur de football diplômé (licence CAF/UEFA), spécialiste de la formation des jeunes, au service du club AFM (Afrique Football Management, club de formation à Bamako, Mali). Tu conçois des ${un ? "exercices" : "séances"} d'entraînement concrets, réalistes et adaptés au niveau, en français simple.
+
+DEMANDE DU COACH
+- Objectif : ${t(b.objectif) || "à définir selon la catégorie"}
+- Catégorie : ${t(b.categorie, 40) || "Seniors"} · Niveau : ${t(b.niveau, 40) || "intermédiaire"}
+- ${un ? `Partie de séance : ${t(b.partie, 40) || "Partie principale"} · Durée de l'exercice : ${Number(b.duree) || 20} min` : `Durée totale : ${Number(b.duree) || 90} min`}
+- Nombre de joueurs disponibles : ${t(b.joueurs, 40) || "18"} (dont gardiens : ${t(b.gardiens, 10) || "2"})
+- Matériel disponible : ${t(b.materiel) || "plots, ballons, chasubles, mini-buts"}
+${b.consigne ? `- Précisions du coach : ${t(b.consigne, 500)}` : ""}
+${b.existants ? `- Exercices déjà prévus dans la séance (à ne pas répéter) : ${t(b.existants, 600)}` : ""}
+
+SCHÉMAS : pour chaque exercice, dessine un schéma tactique avec des coordonnées en mètres.
+- "terrain" : "entier" (105 x 68, x de 0 à 105, y de 0 à 68), "demi" (52.5 x 68 ; le but attaqué est à droite en x=52.5, y=34 ; la ligne médiane est en x=0) ou "zone" (40 x 30, pour les petits espaces, rondos, ateliers).
+- "items" : éléments placés. Types :
+  - "j" joueur AFM, "a" adversaire, "g" gardien : {"t":"j","x":..,"y":..,"n":"1"} (n = numéro court, 1 à 2 caractères)
+  - "plot" : {"t":"plot","x":..,"y":..} ; "ballon" : {"t":"ballon","x":..,"y":..} ; "but" (mini-but) : {"t":"but","x":..,"y":..}
+  - flèches : "course" (déplacement sans ballon), "conduite" (déplacement avec ballon), "passe", "tir" : {"t":"passe","x":..,"y":..,"x2":..,"y2":..,"e":1}
+    "e" = numéro d'étape de l'animation (1, 2, 3…) : les flèches de même étape se jouent en même temps, puis l'étape suivante. Une passe part du joueur qui a le ballon (le ballon est posé à ses pieds au départ, décalé de 1 m). Une course ou une conduite part exactement de la position d'un joueur.
+  - "zone" : rectangle {"t":"zone","x":..,"y":..,"x2":..,"y2":..} ; "texte" : {"t":"texte","x":..,"y":..,"n":"Zone 1"} (court)
+- Reste dans les limites du terrain, espace les joueurs d'au moins 3 m, 6 à 22 éléments par schéma, 2 à 6 étapes de flèches cohérentes (enchaînement logique de l'action).
+
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour :
+${un ? `{"exercice": EXERCICE}` : `{"objectif":"objectif de la séance en une phrase","materiel":"matériel total","exercices":[EXERCICE, ...]}`}
+avec EXERCICE = {"partie":"Échauffement|Partie principale|Jeu / match|Retour au calme","titre":"…","duree":15,"joueurs":"ex. 10 (5 contre 5)","espace":"ex. 30 x 20 m","materiel":"…","objectif":"…","description":"organisation et déroulement en 2 à 4 phrases","consignes":"3 à 5 consignes, une par ligne","variantes":"1 ou 2 progressions","schema":{"terrain":"…","items":[…]}}
+${un ? "" : `La séance contient 4 à 6 exercices dans l'ordre : un échauffement avec ballon, 1 à 3 exercices de partie principale progressifs vers l'objectif, un jeu / match à thème, un retour au calme court. La somme des durées est d'environ ${Number(b.duree) || 90} minutes.`}`;
+    const txt = await askClaude(prompt, un ? 2500 : 9000, 120000);
+    const mj = txt.match(/\{[\s\S]*\}/);
+    let out; try { out = JSON.parse(mj ? mj[0] : txt); } catch { return fail(res, 502, "L'IA a renvoyé une réponse illisible, réessayez."); }
+    const TER = { entier: [105, 68], demi: [52.5, 68], zone: [40, 30] };
+    const PARTS = ["Échauffement", "Partie principale", "Jeu / match", "Retour au calme"];
+    const TYPES = ["j", "a", "g", "plot", "ballon", "but", "course", "passe", "conduite", "tir", "zone", "texte"];
+    const num = (v, max) => Math.round(Math.max(0, Math.min(max, Number(v) || 0)) * 10) / 10;
+    const cleanEx = e => {
+      if (!isObj(e)) return null;
+      const sc = isObj(e.schema) ? e.schema : {}; const ter = TER[sc.terrain] ? sc.terrain : "demi"; const [W, H] = TER[ter];
+      const items = (Array.isArray(sc.items) ? sc.items : []).filter(i => isObj(i) && TYPES.includes(i.t)).slice(0, 40).map(i => {
+        const o = { id: newId(), t: i.t, x: num(i.x, W), y: num(i.y, H) };
+        if (["course", "passe", "conduite", "tir", "zone"].includes(i.t)) { o.x2 = num(i.x2, W); o.y2 = num(i.y2, H); }
+        if (["course", "passe", "conduite", "tir"].includes(i.t)) o.e = Math.max(1, Math.min(20, Math.round(Number(i.e) || 1)));
+        if (["j", "a", "g", "texte"].includes(i.t) && i.n != null) o.n = String(i.n).slice(0, i.t === "texte" ? 30 : 3);
+        return o;
+      });
+      const c = (v, n) => String(v ?? "").trim().slice(0, n);
+      return { id: newId(), partie: PARTS.includes(e.partie) ? e.partie : "Partie principale", titre: c(e.titre, 80), duree: Math.max(0, Math.min(120, Math.round(Number(e.duree) || 0))), joueurs: c(e.joueurs, 40), espace: c(e.espace, 40), materiel: c(e.materiel, 120), objectif: c(e.objectif, 400), description: c(e.description, 1200), consignes: c(e.consignes, 1200), variantes: c(e.variantes, 600), schema: { terrain: ter, items }, ia: true };
+    };
+    if (un) { const ex = cleanEx(out.exercice || out); if (!ex) return fail(res, 502, "L'IA n'a pas proposé d'exercice, réessayez."); return send(res, 200, { exercice: ex }); }
+    const exs = (Array.isArray(out.exercices) ? out.exercices : []).slice(0, 8).map(cleanEx).filter(Boolean);
+    if (!exs.length) return fail(res, 502, "L'IA n'a pas proposé de séance, réessayez.");
+    return send(res, 200, { objectif: String(out.objectif || "").slice(0, 300), materiel: String(out.materiel || "").slice(0, 300), exercices: exs });
   }
 
   // IA : textes d'une affiche de match
