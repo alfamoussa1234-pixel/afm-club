@@ -154,15 +154,16 @@ const AI_KEY = CLAUDE_KEY || GEMINI_KEY;
 const AI_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-5-5";
 let geminiModels = null;
 async function geminiCandidates() {
-  const fixed = [process.env.GEMINI_MODEL, "gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite-latest", "gemini-2.0-flash"].filter(Boolean);
+  const fixed = [process.env.GEMINI_MODEL, "gemini-flash-lite-latest", "gemini-flash-latest"].filter(Boolean);
   if (geminiModels) return [...new Set([...fixed.filter(m => geminiModels.includes(m)), ...geminiModels])];
   try {
     const r = await fetch((process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com") + "/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": GEMINI_KEY }, signal: AbortSignal.timeout(15000) });
     const d = await r.json().catch(() => ({}));
     if (r.ok && Array.isArray(d.models)) {
       const ok = d.models.filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => String(m.name).replace(/^models\//, ""))
-        .filter(n => /gemini/.test(n) && !/(image|tts|audio|live|embedding|vision|exp|preview|thinking|robotics|computer|nano)/.test(n));
-      const score = n => (/flash/.test(n) ? 0 : 10) + (/lite/.test(n) ? 3 : 0) + (/latest/.test(n) ? 0 : 1);
+        .filter(n => /gemini/.test(n) && /flash/.test(n) && !/(image|tts|audio|live|embedding|vision|exp|preview|thinking|robotics|computer|nano|pro)/.test(n));
+      // Flash-Lite d'abord : c'est le modèle qui a le plus gros quota gratuit (environ 500 demandes par jour)
+      const score = n => (/lite/.test(n) ? 0 : 3) + (/latest/.test(n) ? 0 : 1);
       geminiModels = ok.sort((a, b) => score(a) - score(b) || b.localeCompare(a, "en", { numeric: true }));
       console.log("IA Gemini : modèles disponibles →", geminiModels.slice(0, 6).join(", "));
     } else console.error("IA Gemini : liste des modèles impossible :", r.status, d && d.error && d.error.message);
@@ -171,7 +172,7 @@ async function geminiCandidates() {
 }
 async function askGemini(prompt, maxTokens, timeoutMs) {
   const base = (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com") + "/v1beta/models/";
-  const models = (await geminiCandidates()).slice(0, 4); const t0 = Date.now(); let last = null;
+  const models = (await geminiCandidates()).slice(0, 5); const t0 = Date.now(); let last = null;
   for (const model of models) {
     const left = timeoutMs - (Date.now() - t0); if (left < 8000) break;
     let r, d;
@@ -197,7 +198,7 @@ async function askGemini(prompt, maxTokens, timeoutMs) {
   }
   const st = last ? last.status : 0;
   const msg = st === 400 && /api key/i.test(last.msg) || st === 401 || st === 403 ? "Clé Gemini refusée : vérifiez GEMINI_API_KEY sur Render (sans espace avant ou après)."
-    : st === 429 ? "Quota gratuit de l'IA atteint pour le moment, réessayez dans quelques minutes."
+    : st === 429 ? "Quota gratuit de Google atteint (limite par minute ou par jour). Réessayez dans 1 à 2 minutes ; si ça continue, le quota du jour se recharge vers 8 h (heure de Bamako)."
     : st === 503 || st === 500 ? "Les serveurs de Google sont surchargés, réessayez dans une minute."
     : st === 0 ? "L'IA a mis trop de temps à répondre, réessayez (ou demandez une séance plus courte)."
     : "Le service d'IA ne répond pas (code " + st + "), réessayez.";
