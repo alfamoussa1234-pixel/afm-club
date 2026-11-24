@@ -392,6 +392,30 @@ async function serveMedia(req, res, id) {
   res.end(m.data);
 }
 
+async function pushHooks(col, old, d, user) {
+  const s = (await store.get("settings", "club")) || {}; const nom = s.nom || "AFM";
+  if (col === "annonces" && !old) {
+    const ids = await usersWhere(u => u.id !== user.id && (d.public === true || u.role !== "fan"));
+    notify(ids, { title: `${d.priorite === "Urgent" ? "🚨" : "📢"} ${d.titre || "Nouvelle annonce"}`, body: String(d.message || "").slice(0, 140), url: "/#annonces" });
+  }
+  if (col === "decisions" && d.compteId && (!old || old.statut !== d.statut)) {
+    notify([d.compteId], { title: d.statut === "Acceptée" ? "✅ Absence acceptée" : "❌ Absence refusée", body: d.commentaire ? `« ${d.commentaire} »` : "La direction a répondu à votre demande.", url: "/#absences" });
+  }
+  if (col === "matches" && old) {
+    const pour = +d.butsPour || 0, contre = +d.butsContre || 0, oPour = +old.butsPour || 0, oContre = +old.butsContre || 0;
+    const k = kickoffUtc(d), live = k && Date.now() >= k - 10 * 60000 && Date.now() - k < 150 * 60000 && !old.fin;
+    if (live && (pour > oPour || contre > oContre)) {
+      const g = (d.buts || [])[(d.buts || []).length - 1];
+      const p = pour > oPour && g && g.playerId && g.playerId !== "csc" ? await store.get("players", g.playerId) : null;
+      notify(await usersWhere(() => true), { title: pour > oPour ? `⚽ BUUUT ${nom} ! ${pour} - ${contre}` : `⚽ But de ${d.adversaire} : ${nom} ${pour} - ${contre}`, body: pour > oPour ? (p ? `${p.prenom} ${p.nom}${g.minute ? " (" + g.minute + "')" : ""}` : "Allez l'AFM !") : "Courage les gars !", url: "/#calendrier", tag: "match-" + d.id });
+    }
+    if (d.fin && !old.fin) {
+      const flags = (await store.get("config", "pushflags")) || {}; flags["f:" + d.id] = 1; await store.put("config", "pushflags", flags);
+      notify(await usersWhere(() => true), { title: `🏁 Fin du match : ${nom} ${pour} - ${contre} ${d.adversaire}`, body: pour > contre ? "Victoire ! Merci pour votre soutien 💙" : "Merci pour votre soutien !", url: "/#calendrier", tag: "match-" + d.id });
+    }
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Routes de l'API                                                     */
 /* ------------------------------------------------------------------ */
@@ -451,6 +475,26 @@ async function api(req, res, pathname) {
 
   if (m === "GET" && seg[0] === "me") return send(res, 200, { user: publicUser(user) });
   if (m === "GET" && seg[0] === "version") return send(res, 200, { v: await store.version() });
+  if (seg[0] === "push") {
+    if (m === "GET" && seg[1] === "key") return send(res, 200, { key: VAPID.publicKey });
+    if (m === "POST" && seg[1] === "subscribe") {
+      const b = await readBody(req, 1e4); const ep = String(b.endpoint || "");
+      if (!pushHostOk(ep)) return fail(res, 400, "Service de notification non reconnu par ce téléphone");
+      const id = crypto.createHash("sha256").update(ep).digest("hex").slice(0, 40);
+      await store.put("push", id, { userId: user.id, endpoint: ep, createdAt: new Date().toISOString() });
+      return send(res, 200, { ok: true });
+    }
+    if (m === "POST" && seg[1] === "unsubscribe") {
+      const b = await readBody(req, 1e4); const id = crypto.createHash("sha256").update(String(b.endpoint || "")).digest("hex").slice(0, 40);
+      const sub = await store.get("push", id); if (sub && sub.userId === user.id) await store.del("push", id);
+      return send(res, 200, { ok: true });
+    }
+    if (m === "GET" && seg[1] === "inbox") {
+      const items = await withLock("pushq:" + user.id, async () => { const q = await store.get("pushq", user.id); if (!q || !(q.items || []).length) return []; await store.put("pushq", user.id, { items: [] }); return q.items; });
+      return send(res, 200, { items });
+    }
+    if (m === "POST" && seg[1] === "test") { notify([user.id], { title: "✅ Notifications activées", body: "Vous recevrez ici les nouvelles de l'AFM.", url: "/" }); return send(res, 200, { ok: true }); }
+  }
   if (m === "GET" && seg[0] === "state") return send(res, 200, { user: publicUser(user), ...(await stateFor(user)) });
 
   if (m === "POST" && seg[0] === "password") {
@@ -476,6 +520,7 @@ async function api(req, res, pathname) {
         f.dernier = now; f.readJoueur = now; f.playerId = user.playerId || "";
         const { id, ...body } = f; await store.put("fils", user.id, body); return { ...body, id: user.id };
       });
+      notify(await staffIds(), { title: `💬 Message de ${user.nom || user.username}`, body: text.slice(0, 140), url: "/#messages", tag: "msg-" + user.id });
       return send(res, 200, { fil: f });
     }
     if (m === "POST" && seg[2] === "lu") {
@@ -495,6 +540,7 @@ async function api(req, res, pathname) {
     const id = newId();
     const s = { userId: user.id, nom: user.nom || "Supporter", telephone: user.telephone || "", categorie: cats.includes(b.categorie) ? b.categorie : "Autre", texte, date: new Date().toISOString(), statut: "Nouvelle" };
     await store.put("suggestions", id, s);
+    notify(await staffIds(), { title: `💡 Nouvelle idée de ${s.nom}`, body: texte.slice(0, 140), url: "/#idees" });
     return send(res, 200, { ok: true, suggestion: { id, categorie: s.categorie, texte, date: s.date } });
   }
 
@@ -518,6 +564,8 @@ async function api(req, res, pathname) {
     }));
     const demandes = [...locked, ...editable.filter(d => !locked.some(l => l.id === d.id))];
     await store.put("comptes", user.id, { playerId: user.playerId || "", demandes });
+    const nouvelles = demandes.filter(d => !before.some(x => x.id === d.id));
+    if (nouvelles.length) notify(await staffIds(), { title: `📋 Absence déclarée : ${user.nom || user.username}`, body: `${nouvelles[0].type} · ${nouvelles[0].date} · ${nouvelles[0].motif}`, url: "/#demandes" });
     return send(res, 200, { ok: true, demandes });
   }
 
@@ -538,6 +586,7 @@ async function api(req, res, pathname) {
         f.dernier = now; f.readStaff = now; f.playerId = target.playerId || "";
         const { id, ...body } = f; await store.put("fils", target.id, body); return { ...body, id: target.id };
       });
+      notify([target.id], { title: `💬 ${user.nom || "La direction"} (AFM)`, body: text.slice(0, 140), url: "/#messages", tag: "msg" });
       return send(res, 200, { fil: f });
     }
     if (m === "POST" && seg[2] === "lu") {
@@ -626,6 +675,7 @@ N'invente aucune information (pas de prix, de sponsor ou de joueur non mentionn�
       const { id, ...data } = b;
       if (data.photo !== undefined && data.photo !== "" && !validId(data.photo)) return fail(res, 400, "Photo invalide");
       await store.put(seg[1], seg[2], data);
+      pushHooks(seg[1], old, { ...data, id: seg[2] }, user).catch(e => console.error("Push :", e.message));
       if (old && old.photo && old.photo !== data.photo) await store.delMedia(old.photo).catch(() => {});
       return send(res, 200, { ok: true });
     }
@@ -750,6 +800,76 @@ N'invente aucune information (pas de prix, de sponsor ou de joueur non mentionn�
 /* ------------------------------------------------------------------ */
 /* Démarrage                                                           */
 /* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/* Notifications push (Web Push + VAPID, sans dépendance externe)       */
+/* ------------------------------------------------------------------ */
+// Principe : on envoie une notification « vide » au service de push du téléphone ;
+// le téléphone réveille l'application, qui vient chercher le contenu sur /api/push/inbox.
+const b64u = buf => Buffer.from(buf).toString("base64url");
+let VAPID = null;
+async function initPush() {
+  let v = await store.get("config", "vapid");
+  if (!v || !v.privateJwk) {
+    const { publicKey, privateKey } = crypto.generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+    const jwk = privateKey.export({ format: "jwk" });
+    const pub = publicKey.export({ format: "jwk" });
+    const raw = Buffer.concat([Buffer.from([4]), Buffer.from(pub.x, "base64url"), Buffer.from(pub.y, "base64url")]);
+    v = { privateJwk: jwk, publicKey: b64u(raw) };
+    await store.put("config", "vapid", v);
+  }
+  VAPID = { key: crypto.createPrivateKey({ key: v.privateJwk, format: "jwk" }), publicKey: v.publicKey };
+}
+const PUSH_HOSTS = [/\.googleapis\.com$/, /(^|\.)push\.services\.mozilla\.com$/, /\.push\.apple\.com$/, /\.notify\.windows\.com$/, /(^|\.)push\.hicloud\.com$/];
+const pushHostOk = u => { try { const x = new URL(u); if (process.env.PUSH_ALLOW_LOCAL === "1" && x.hostname === "localhost") return true; return x.protocol === "https:" && PUSH_HOSTS.some(r => r.test(x.hostname)); } catch { return false; } };
+function vapidJwt(aud) {
+  const head = b64u(JSON.stringify({ typ: "JWT", alg: "ES256" }));
+  const body = b64u(JSON.stringify({ aud, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: process.env.PUSH_CONTACT || "mailto:contact@afm-club.app" }));
+  const sig = crypto.sign("sha256", Buffer.from(head + "." + body), { key: VAPID.key, dsaEncoding: "ieee-p1363" });
+  return head + "." + body + "." + b64u(sig);
+}
+async function sendPush(sub) {
+  const aud = new URL(sub.endpoint).origin;
+  const r = await fetch(sub.endpoint, { method: "POST", headers: { TTL: "86400", Urgency: "high", "Content-Length": "0", Authorization: `vapid t=${vapidJwt(aud)}, k=${VAPID.publicKey}` }, signal: AbortSignal.timeout(15000) });
+  if (r.status === 404 || r.status === 410) await store.del("push", sub.id);
+  return r.status;
+}
+/** Envoie une notification à une liste d'utilisateurs (ne bloque jamais la réponse) */
+function notify(userIds, n) {
+  const ids = [...new Set(userIds.filter(Boolean))]; if (!ids.length) return;
+  (async () => {
+    const subs = await store.all("push");
+    for (const uid of ids) {
+      await withLock("pushq:" + uid, async () => {
+        const q = (await store.get("pushq", uid)) || { items: [] };
+        const items = [...(q.items || []), { id: newId(), title: String(n.title).slice(0, 80), body: String(n.body || "").slice(0, 200), url: n.url || "/", tag: n.tag || "", date: new Date().toISOString() }].slice(-20);
+        await store.put("pushq", uid, { items });
+      });
+      for (const sub of subs.filter(x => x.userId === uid)) { try { await sendPush(sub); } catch (e) { /* téléphone injoignable : on réessaiera au prochain événement */ } }
+    }
+  })().catch(e => console.error("Push :", e.message));
+}
+const usersWhere = async pred => (await store.all("users")).filter(u => !u.disabled && pred(u)).map(u => u.id);
+const staffIds = () => usersWhere(isStaff);
+// Coups d'envoi et fins de match automatiques (vérifiés chaque minute, heure du Mali = UTC)
+const TZ_OFFSET_MIN = Number(process.env.TZ_OFFSET_MIN || 0);
+const kickoffUtc = m => m.date && m.heure && /^\d{2}:\d{2}$/.test(m.heure) ? Date.parse(`${m.date}T${m.heure}:00Z`) - TZ_OFFSET_MIN * 60000 : null;
+async function matchTicker() {
+  try {
+    const s = (await store.get("settings", "club")) || {}; const nom = s.nom || "AFM";
+    const flags = (await store.get("config", "pushflags")) || {}; let changed = false; const now = Date.now();
+    for (const m of await store.all("matches")) {
+      if (m.statut === "Reporté" || m.statut === "Annulé") continue;
+      const k = kickoffUtc(m); if (!k) continue;
+      if (now >= k && now - k < 15 * 60000 && !flags["d:" + m.id]) { flags["d:" + m.id] = 1; changed = true; notify(await usersWhere(() => true), { title: `🔴 Coup d'envoi : ${nom} - ${m.adversaire}`, body: `Le match commence ! Suivez le score en direct dans l'application.`, url: "/#calendrier", tag: "match-" + m.id }); }
+      const end = m.fin ? Date.parse(m.fin) : k + 120 * 60000;
+      if (now >= end && now - end < 30 * 60000 && !flags["f:" + m.id]) { flags["f:" + m.id] = 1; changed = true;
+        const sc = m.butsPour !== "" && m.butsPour != null ? ` : ${nom} ${m.butsPour} - ${m.butsContre || 0} ${m.adversaire}` : "";
+        notify(await usersWhere(() => true), { title: `🏁 Fin du match${sc}`, body: sc ? "Merci pour votre soutien !" : `${nom} - ${m.adversaire} est terminé.`, url: "/#calendrier", tag: "match-" + m.id }); }
+    }
+    if (changed) await store.put("config", "pushflags", flags);
+  } catch (e) { console.error("Ticker :", e.message); }
+}
+
 async function ensureAdmin() {
   const users = await store.all("users");
   if (users.some(u => u.role === "admin")) return;
@@ -784,5 +904,7 @@ const server = http.createServer(async (req, res) => {
 (async () => {
   await store.init();
   await ensureAdmin();
+  await initPush();
+  setInterval(matchTicker, 60000);
   server.listen(PORT, () => console.log(`AFM en ligne sur le port ${PORT} (stockage : ${store.kind})`));
 })().catch(e => { console.error("Démarrage impossible :", e); process.exit(1); });
