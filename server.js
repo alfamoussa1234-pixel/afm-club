@@ -236,6 +236,7 @@ async function stateFor(user) {
   const annonces = await store.all("annonces");
 
   if (user.role === "fan") {
+    out.matches = out.matches.map(({ convoques, ...m }) => (m.compo && m.compo.public === false ? { ...m, compo: null } : m));
     out.suggestions = (await store.all("suggestions")).filter(s => s.userId === user.id).map(s => ({ id: s.id, categorie: s.categorie, texte: s.texte, date: s.date }));
     out.fils = [];
     out.annonces = annonces.filter(a => a.public === true);
@@ -268,6 +269,8 @@ async function stateFor(user) {
   }
   // joueur
   out.suggestions = [];
+  out.matches = out.matches.map(m => (m.compo && m.compo.public === false ? { ...m, compo: null } : m));
+  out.trainings = out.trainings.map(({ pointage, ...t }) => ({ ...t, pointe: !!((pointage && Object.keys(pointage).length) || (t.presents || []).length), pointage: pointage && pointage[user.playerId] ? { [user.playerId]: pointage[user.playerId] } : {}, presents: (t.presents || []).filter(id => id === user.playerId), seance: t.seance && t.seance.visibleJoueurs !== false ? t.seance : null }));
   const monFil = await store.get("fils", user.id);
   out.fils = monFil ? [monFil] : [];
   const mine = await store.get("comptes", user.id);
@@ -661,19 +664,20 @@ N'invente aucune information (pas de prix, de sponsor ou de joueur non mentionn�
       for (const k of PRES_PHOTOS) if (p[k] && !(await mediaOk(p[k]))) { p[k] = ""; photosPerdues.n++; }
       await store.put("presentation", "club", p); counts.presentation = 1;
     }
-    // Comptes d'accès : recréés avec un mot de passe provisoire (les supporters devront se réinscrire)
+    // Comptes d'accès (direction, joueurs, supporters) : recréés avec un mot de passe provisoire
     const existing = await store.all("users");
     const identifiants = [];
     const okUsers = new Set(existing.map(u => u.id));
     for (const u of Array.isArray(d.users) ? d.users : []) {
-      if (!isObj(u) || !validId(u.id) || !["admin", "dirigeant", "joueur"].includes(u.role)) continue;
-      const username = clean(u.username).toLowerCase();
-      if (!/^[a-z0-9._-]{3,32}$/.test(username)) continue;
-      if (existing.some(x => x.id === u.id || x.username === username)) continue;
+      if (!isObj(u) || !validId(u.id) || !ROLES.includes(u.role)) continue;
       const phone = u.telephone ? normalizePhone(u.telephone) : "";
+      const username = u.role === "fan" ? (phone || "") : clean(u.username).toLowerCase();
+      if (!/^[a-z0-9._-]{3,32}$/.test(username)) continue;
+      if (existing.some(x => x.id === u.id || x.username === username || (u.role === "fan" && phone && x.telephone === phone))) continue;
       const pw = crypto.randomBytes(6).toString("base64url").replace(/[-_]/g, "x").slice(0, 8);
       await store.put("users", u.id, { username, nom: clean(u.nom).slice(0, 80), role: u.role, telephone: phone && !existing.some(x => x.telephone === phone) ? phone : "", playerId: u.role === "joueur" && validId(u.playerId) ? u.playerId : "", passHash: hashPassword(pw), tokenVersion: 0, createdAt: new Date().toISOString() });
-      okUsers.add(u.id); identifiants.push({ username, nom: u.nom || "", role: u.role, password: pw });
+      existing.push({ id: u.id, username, telephone: phone });
+      okUsers.add(u.id); identifiants.push({ username, nom: u.nom || "", role: u.role, telephone: phone || "", password: pw });
     }
     if (identifiants.length) counts.comptes_acces = identifiants.length;
     let nd = 0;
