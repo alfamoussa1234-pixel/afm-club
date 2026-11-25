@@ -360,9 +360,18 @@ async function getPresentation() { const p = await store.get("presentation", "cl
 /* ------------------------------------------------------------------ */
 // ANDROID_PACKAGE : identifiant du paquet (ex. com.onrender.afm_club.twa)
 // ANDROID_SHA256  : empreinte(s) SHA-256 de la clé de signature, séparées par des virgules
+function assetLinksCheck() {
+  if (!process.env.ANDROID_PACKAGE && !process.env.ANDROID_SHA256) return;
+  const n = assetLinks().length;
+  console.log(n ? "Play Store : liaison Android OK (" + assetLinks()[0].target.package_name + ")" : "Play Store : liaison Android INCOMPLÈTE — vérifiez ANDROID_PACKAGE et ANDROID_SHA256 (64 caractères hexadécimaux) sur Render");
+}
 function assetLinks() {
-  const pkg = (process.env.ANDROID_PACKAGE || "").trim();
-  const fps = (process.env.ANDROID_SHA256 || "").split(",").map(s => s.trim().toUpperCase()).filter(s => /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(s));
+  // Tolérant aux erreurs de copier-coller : guillemets, crochets, espaces, « SHA256: » devant, minuscules, sans les « : »
+  const pkg = (process.env.ANDROID_PACKAGE || "").replace(/["'\s\[\]]/g, "");
+  const fps = (process.env.ANDROID_SHA256 || "").split(/[,;\n]+/).map(s => {
+    const hex = s.toUpperCase().replace(/^\s*["'\[]*\s*(SHA-?256[^:]*:)?/, "").replace(/[^0-9A-F]/g, "");
+    return hex.length === 64 ? hex.match(/../g).join(":") : "";
+  }).filter(Boolean);
   if (!pkg || !fps.length) return [];
   return [{ relation: ["delegate_permission/common.handle_all_urls"], target: { namespace: "android_app", package_name: pkg, sha256_cert_fingerprints: fps } }];
 }
@@ -1006,7 +1015,7 @@ const server = http.createServer(async (req, res) => {
       return await api(req, res, pathname);
     }
     if (pathname.startsWith("/media/") && req.method === "GET") return await serveMedia(req, res, pathname.slice(7));
-    if (pathname === "/.well-known/assetlinks.json") return send(res, 200, assetLinks(), { "Cache-Control": "public, max-age=300" });
+    if (pathname === "/.well-known/assetlinks.json") return send(res, 200, assetLinks(), { "Cache-Control": "no-cache" });
     if (pathname === "/confidentialite" || pathname === "/confidentialite/" || pathname === "/suppression-compte") return await privacyPage(req, res);
     if (req.method !== "GET" && req.method !== "HEAD") return fail(res, 405, "Méthode non autorisée");
     return await serveStatic(req, res, pathname);
@@ -1021,5 +1030,5 @@ const server = http.createServer(async (req, res) => {
   await ensureAdmin();
   await initPush();
   setInterval(matchTicker, 60000);
-  server.listen(PORT, () => console.log(`AFM en ligne sur le port ${PORT} (stockage : ${store.kind})`));
+  server.listen(PORT, () => { console.log(`AFM en ligne sur le port ${PORT} (stockage : ${store.kind})`); assetLinksCheck(); });
 })().catch(e => { console.error("Démarrage impossible :", e); process.exit(1); });
