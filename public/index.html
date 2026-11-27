@@ -320,6 +320,21 @@ main{padding:22px 32px 60px;min-width:0}
 .tok .bd img{width:100%;height:100%;object-fit:cover}
 .tok .nm{margin-top:3px;background:rgba(10,10,50,.78);color:#fff;font-size:11px;font-weight:600;border-radius:5px;padding:1px 5px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tok .cap{position:absolute;top:-4px;right:calc(50% - 30px);background:var(--gold);color:var(--pri-dd);font-weight:800;font-size:10px;border-radius:50%;width:17px;height:17px;display:grid;place-items:center;border:1px solid #fff}
+.tok .mk{position:absolute;top:-5px;left:calc(50% + 12px);display:flex;gap:2px;z-index:2}
+.tok .mk i{display:block;width:8px;height:11px;border-radius:2px;border:1px solid rgba(0,0,0,.35)}
+.tok .mk .yc{background:#f5c518}.tok .mk .rc{background:#e53935}
+.tok .sin{position:absolute;top:-6px;left:calc(50% - 30px);background:#2e7d32;color:#fff;font-size:10px;font-weight:800;border-radius:50%;width:17px;height:17px;display:grid;place-items:center;border:1px solid #fff;z-index:2}
+.tok.off .bd{opacity:.45;filter:grayscale(1)}
+.tbl .who b,.tbl .who small{white-space:nowrap}
+.ev-ico{width:40px;font-size:17px;text-align:center}
+.goal-line .del{margin-left:auto}
+.live-acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.live-acts .btn{justify-content:center}
+.btn.yel{background:#f5c518;color:#3b2f00}.btn.red2{background:#c62828;color:#fff}
+.convoc{border-left:4px solid var(--gold)}
+.rp{font-size:12px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.rp.oui{background:#e3f4e6;color:#1b6e2a}.rp.non{background:#fde4e4;color:#b3261e}.rp.att{background:#f1f1f6;color:#666}
+.mins td.num{font-variant-numeric:tabular-nums}
 .tok.empty .bd{background:rgba(255,255,255,.25);border-style:dashed;border-color:#fff}
 .compo-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px}
 .slot-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}.slot-row b{width:38px;font-size:12px;color:var(--muted)}
@@ -706,9 +721,43 @@ function matchGoals(m) {
   if (Array.isArray(m.buts)) return m.buts;
   const out = []; (m.buteurs || []).forEach(b => { for (let i = 0; i < (+b.buts || 1); i++) out.push({ playerId: b.playerId, passeurId: "", minute: "" }); }); return out;
 }
+/** Événements du match : remplacements et cartons [{id, type:"sub"|"jaune"|"rouge", minute, out, in, playerId, auto}] */
+const matchEvents = m => Array.isArray(m.events) ? m.events : [];
+const byMin = (a, b) => (+a.minute || 999) - (+b.minute || 999);
+const matchDur = m => Math.max(20, Math.min(130, +m.duree || 90));
+/** Composition « en direct » : titulaires après remplacements, cartons, entrants */
+function lineupNow(m) {
+  const c = m.compo; if (!c || !(c.titulaires || []).length) return null;
+  const tit = c.titulaires.map(t => ({ ...t })); let bench = [...(c.remplacants || [])]; const marks = {}; const sortis = [];
+  const mk = id => marks[id] || (marks[id] = { j: 0, r: false, in: false });
+  matchEvents(m).slice().sort(byMin).forEach(e => {
+    if (e.type === "sub") { const t = tit.find(x => x.playerId === e.out); if (t) { t.playerId = e.in; sortis.push({ id: e.out, minute: e.minute }); } bench = bench.filter(x => x !== e.in); mk(e.in).in = true; }
+    if (e.type === "jaune") mk(e.playerId).j++;
+    if (e.type === "rouge") mk(e.playerId).r = true;
+  });
+  return { ...c, titulaires: tit, remplacants: bench, sortis, marks };
+}
+/** Minutes jouées par joueur sur un match (null si pas de composition) */
+function minutesIn(m) {
+  const c = m.compo; if (!c || !(c.titulaires || []).length) return null;
+  const D = matchDur(m), clamp = x => Math.max(0, Math.min(D, +x || 0)), on = {}, tot = {};
+  c.titulaires.forEach(t => on[t.playerId] = 0);
+  matchEvents(m).filter(e => e.type === "sub" || e.type === "rouge").slice().sort(byMin).forEach(e => {
+    const mn = e.minute === "" || e.minute == null ? D : clamp(e.minute); const out = e.type === "sub" ? e.out : e.playerId;
+    if (out in on) { tot[out] = (tot[out] || 0) + Math.max(0, mn - on[out]); delete on[out]; }
+    if (e.type === "sub" && e.in && !(e.in in on) && !(e.in in tot)) on[e.in] = mn;
+  });
+  Object.entries(on).forEach(([id, st]) => tot[id] = (tot[id] || 0) + Math.max(0, D - st));
+  return tot;
+}
+function minutesBy() { const g = {}; played().forEach(m => { const t = minutesIn(m); if (t) Object.entries(t).forEach(([id, n]) => g[id] = (g[id] || 0) + n); }); return g; }
+function cardsBy() { const g = {}; played().forEach(m => matchEvents(m).forEach(e => { if (e.type !== "jaune" && e.type !== "rouge") return; const o = g[e.playerId] || (g[e.playerId] = { j: 0, r: 0 }); if (e.type === "jaune") o.j++; else o.r++; })); return g; }
+const repOf = (m, pid) => ((m.reponses || {})[pid] || {}).r || "";
+const repTag = (m, pid) => { const r = repOf(m, pid); return r === "oui" ? `<span class="rp oui">✅ Présent</span>` : r === "non" ? `<span class="rp non">❌ Indisponible</span>` : `<span class="rp att">⏳ Sans réponse</span>`; };
 function goalsBy() { const g = {}; played().forEach(m => matchGoals(m).forEach(b => { if (b.playerId && b.playerId !== "csc") g[b.playerId] = (g[b.playerId] || 0) + 1; })); return g; }
 function assistsBy() { const g = {}; played().forEach(m => matchGoals(m).forEach(b => { if (b.passeurId) g[b.passeurId] = (g[b.passeurId] || 0) + 1; })); return g; }
-function matchesPlayedBy() { const g = {}; played().forEach(m => new Set([...(m.convoques || []), ...((m.compo && m.compo.titulaires) || []).map(t => t.playerId), ...matchGoals(m).flatMap(b => [b.playerId, b.passeurId])].filter(x => x && x !== "csc")).forEach(id => g[id] = (g[id] || 0) + 1)); return g; }
+function matchesPlayedBy() { const g = {}; played().forEach(m => { const mi = minutesIn(m); const base = mi ? Object.keys(mi).filter(id => mi[id] > 0) : (m.convoques || []);
+  new Set([...base, ...matchGoals(m).flatMap(b => [b.playerId, b.passeurId])].filter(x => x && x !== "csc")).forEach(id => g[id] = (g[id] || 0) + 1); }); return g; }
 const topOf = (obj, n = 5) => Object.entries(obj).filter(([id]) => pById(id)).sort((a, b) => b[1] - a[1]).slice(0, n);
 const leaderList = (rows, unit) => rows.length ? `<div class="list">${rows.map(([id, n], i) => `<div class="li"><div class="who"><span class="jersey" style="${i ? "background:var(--pri-l);color:var(--pri)" : "background:var(--gold);color:var(--pri-dd)"}">${i + 1}</span>${avatar(pById(id), 30)}<b>${esc(pName(id))}</b></div><span class="score">${n}<small class="muted" style="font-size:12px;font-family:Inter"> ${unit}</small></span></div>`).join("")}</div>` : `<div class="empty" style="padding:14px">Pas encore de ${unit === "but(s)" ? "buts" : "passes décisives"}</div>`;
 function presence() { const t = S.trainings.filter(x => x.date <= today() && (x.pointe || (x.presents || []).length || Object.keys(x.pointage || {}).length)); const g = {}; t.forEach(x => (x.presents || []).forEach(id => g[id] = (g[id] || 0) + 1)); return { total: t.length, by: g, list: t }; }
@@ -902,7 +951,7 @@ function vPHome() {
     <div class="card kpi accent"><div class="lab">Mes buts</div><div class="val">${g[p.id] || 0}</div><div class="sub">${assistsBy()[p.id] || 0} passe(s) décisive(s)</div></div>
     <div class="card kpi"><div class="lab">Matchs joués</div><div class="val">${mp[p.id] || 0}</div><div class="sub">sur ${played().length} disputés</div></div>
     <div class="card kpi"><div class="lab">Présence</div><div class="val">${pr.total ? Math.round((pr.by[p.id] || 0) / pr.total * 100) + "%" : "—"}</div><div class="sub">${pr.by[p.id] || 0} séance(s) sur ${pr.total}</div></div>
-  </div>`) + `
+  </div>`) + (p ? convocCards(p) : "") + `
   <div class="grid two">
     <div class="card next"><h3>Prochain match</h3>
       ${nx ? `<div class="vs"><div class="team">${nx.lieu === "Extérieur" ? esc(nx.adversaire) : nom}</div><div class="vsb">VS</div><div class="team">${nx.lieu === "Extérieur" ? nom : esc(nx.adversaire)}</div></div><div class="meta">${fmtDay(nx.date)}${nx.heure ? " · " + esc(nx.heure) : ""} · ${esc(nx.competition || "")} · ${esc(nx.lieu || "")}${nx.stade ? " (" + esc(nx.stade) + ")" : ""}</div>
@@ -920,6 +969,24 @@ function vPHome() {
       ${tr.length ? `<div class="list">${tr.map(t => `<div class="li"><div>${actTag(t)} <b>${fmtDay(t.date)}</b><br><small class="muted">${[t.heure, t.lieu, t.theme].filter(Boolean).map(esc).join(" · ")}</small>${t.seance && (t.seance.exercices || []).length ? `<br><a href="#" onclick="event.preventDefault();openSeanceView('${t.id}')" style="color:var(--pri);font-weight:600;font-size:13px">📋 Voir la fiche de séance</a>` : ""}</div>${p ? `<button class="btn ghost sm" onclick="openAbsence('${t.id}')">Absent</button>` : ""}</div>`).join("")}</div>` : empty("Aucune activité programmée", "cone")}
     </div>
   </div>`;
+}
+/* ================= Convocations (espace joueur) ================= */
+function convocCards(p) {
+  const list = S.matches.filter(m => (m.convoques || []).includes(p.id) && !isPlayed(m) && m.date >= today() && !["Reporté", "Annulé"].includes(m.statut)).sort((a, b) => (a.date + (a.heure || "")).localeCompare(b.date + (b.heure || "")));
+  if (!list.length) return "";
+  const nom = esc(S.settings.nom || "AFM");
+  return `<div class="card convoc" style="margin-bottom:16px"><h3>📋 Mes convocations</h3><div class="list">${list.map(m => { const r = repOf(m, p.id); const rr = (m.reponses || {})[p.id];
+    return `<div class="li" style="flex-wrap:wrap;gap:8px"><div><b>${nom} – ${esc(m.adversaire)}</b><br><small class="muted">${fmtDay(m.date)}${m.heure ? " · " + esc(m.heure) : ""}${m.stade ? " · " + esc(m.stade) : ""}</small>${r === "non" && rr.motif ? `<br><small class="muted">Motif : ${esc(rr.motif)}</small>` : ""}</div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${r ? `<small class="muted">Votre réponse :</small>` : ""}${PREVIEW ? "" : `<button class="btn ${r === "oui" ? "ok" : "ghost"} sm" onclick="convocAnswer('${m.id}','oui')">✅ Je serai là</button><button class="btn ${r === "non" ? "danger" : "ghost"} sm" onclick="convocAnswer('${m.id}','non')">❌ Indisponible</button>`}</div></div>`; }).join("")}</div>
+    <small class="muted">Répondez pour aider le coach à préparer l'équipe.</small></div>`;
+}
+async function convocAnswer(id, r, motif) {
+  if (r === "non" && motif === undefined) {
+    $("#modal").innerHTML = `<header><h2>Indisponible pour ce match</h2><button class="icon-btn" onclick="closeModal()">${I.x}</button></header><div class="body"><label class="full">Motif (facultatif, visible par le staff)<input class="input" id="cvMotif" maxlength="200" placeholder="Ex. blessure, examens, voyage…"></label></div>
+    <footer><button class="btn ghost" onclick="closeModal()">Annuler</button><button class="btn danger" onclick="convocAnswer('${id}','non',document.getElementById('cvMotif').value)">Confirmer</button></footer>`;
+    $("#ov").classList.add("open"); return;
+  }
+  try { await api("POST", "convocation/" + id, { reponse: r, motif: motif || "" }); closeModal(); toast(r === "oui" ? "Présence confirmée 👍" : "Indisponibilité envoyée au staff"); refresh(); } catch (e) { apiErr(e); }
 }
 function vPAbsences() {
   const link = needLink(); const c = myCompte();
@@ -1005,7 +1072,7 @@ function vDash() {
       ${pr.total ? `<small class="muted">Joueurs les moins assidus</small>` : ""}
     </div>
     <div class="card"><h3>Indisponibles</h3>
-      ${inj.length ? `<div class="list">${inj.map(p => `<div class="li"><div class="who"><span class="jersey">${esc(p.numero || "–")}</span><div><b>${esc(p.prenom)} ${esc(p.nom)}</b><small>${esc(p.poste || "")}</small></div></div><span class="tag ${p.statut === "Blessé" ? "t-red" : "t-gold"}">${esc(p.statut)}</span></div>`).join("")}</div>` : `<div class="empty">${I.check}<div>Tout l'effectif est disponible</div></div>`}
+      ${inj.length ? `<div class="list">${inj.map(p => `<div class="li"><div class="who"><span class="jersey">${esc(p.numero || "–")}</span><div><b>${esc(p.prenom)} ${esc(p.nom)}</b><small>${esc(p.blessure || p.poste || "")}${p.retourPrevu ? ` · retour ${p.retourPrevu < today() ? `<span style="color:var(--red,#c62828)">prévu le ${fmtDate(p.retourPrevu)} (dépassé)</span>` : "le " + fmtDate(p.retourPrevu)}` : ""}</small></div></div><span class="tag ${p.statut === "Blessé" ? "t-red" : "t-gold"}">${esc(p.statut)}</span></div>`).join("")}</div>` : `<div class="empty">${I.check}<div>Tout l'effectif est disponible</div></div>`}
     </div>
   </div>`;
 }
@@ -1015,7 +1082,7 @@ const POSTES = ["Gardien", "Défenseur", "Milieu", "Attaquant"];
 const STATUTS = ["Actif", "Blessé", "Suspendu", "Inactif"];
 const stTag = s => `<span class="tag ${({ Actif: "t-green", "Blessé": "t-red", Suspendu: "t-gold", Inactif: "t-grey" })[s] || "t-grey"}">${esc(s || "—")}</span>`;
 function vPlayers() {
-  const ast = assistsBy(); const g = goalsBy(), mp = matchesPlayedBy(), pr = presence();
+  const ast = assistsBy(); const g = goalsBy(), mp = matchesPlayedBy(), pr = presence(), mins = minutesBy(), cds = cardsBy();
   const linked = new Set(S.users.filter(u => u.role === "joueur").map(u => u.playerId).filter(Boolean));
   const q = UI.pSearch.toLowerCase();
   const list = S.players.filter(p => (UI.pPoste === "Tous" || p.poste === UI.pPoste) && (`${p.prenom} ${p.nom} ${p.numero}`.toLowerCase().includes(q)))
@@ -1026,11 +1093,11 @@ function vPlayers() {
     <input class="input search" id="pSearch" placeholder="Rechercher un joueur…" value="${esc(UI.pSearch)}" oninput="UI.pSearch=this.value;render()">
     <div class="seg">${["Tous", ...POSTES].map(x => `<button class="${UI.pPoste === x ? "on" : ""}" onclick="UI.pPoste='${x}';render()">${x}</button>`).join("")}</div>
   </div>
-  <div class="card wrap">${list.length ? `<table class="tbl"><thead><tr><th>Joueur</th><th>Poste</th><th class="hide-m">Âge</th><th class="hide-m">Téléphone</th><th>Statut</th><th class="hide-m">Cotisation</th><th class="num">Matchs</th><th class="num">Buts</th><th class="num">Passes</th><th class="num hide-m">Présence</th><th></th></tr></thead><tbody>
+  <div class="card wrap">${list.length ? `<table class="tbl"><thead><tr><th>Joueur</th><th>Poste</th><th class="hide-m">Âge</th><th class="hide-m">Téléphone</th><th>Statut</th><th class="hide-m">Cotisation</th><th class="num">Matchs</th><th class="num hide-m">Min.</th><th class="num">Buts</th><th class="num">Passes</th><th class="num hide-m">🟨/🟥</th><th class="num hide-m">Présence</th><th></th></tr></thead><tbody>
   ${list.map(p => `<tr><td><div class="who">${avatar(p)}<div><b>${esc(p.prenom)} ${esc(p.nom)}</b>${linked.has(p.id) ? `<small>✓ accès à l'espace joueur</small>` : IS_ADMIN ? `<small><a href="#" onclick="event.preventDefault();openUserForm(null,'${p.id}')" style="color:var(--pri)">Créer son accès</a></small>` : ""}</div></div></td>
   <td>${esc(p.poste || "—")}</td><td class="hide-m">${age(p.naissance) !== "" ? age(p.naissance) + " ans" : "—"}</td><td class="hide-m">${esc(p.telephone || "—")}</td>
-  <td>${stTag(p.statut)}</td><td class="hide-m"><span class="tag ${p.cotisation === "À jour" ? "t-green" : p.cotisation === "Exonéré" ? "t-grey" : "t-red"}">${esc(p.cotisation || "En retard")}</span></td>
-  <td class="num">${mp[p.id] || 0}</td><td class="num"><b>${g[p.id] || 0}</b></td><td class="num">${ast[p.id] || 0}</td><td class="num hide-m">${pr.total ? Math.round((pr.by[p.id] || 0) / pr.total * 100) + "%" : "—"}</td>${actions("players", p.id)}</tr>`).join("")}
+  <td>${stTag(p.statut)}${(p.statut === "Blessé" || p.statut === "Suspendu") && p.retourPrevu ? `<br><small class="muted">retour ${fmtDate(p.retourPrevu)}</small>` : ""}</td><td class="hide-m"><span class="tag ${p.cotisation === "À jour" ? "t-green" : p.cotisation === "Exonéré" ? "t-grey" : "t-red"}">${esc(p.cotisation || "En retard")}</span></td>
+  <td class="num">${mp[p.id] || 0}</td><td class="num hide-m">${mins[p.id] ? mins[p.id] + "'" : "—"}</td><td class="num"><b>${g[p.id] || 0}</b></td><td class="num">${ast[p.id] || 0}</td><td class="num hide-m">${cds[p.id] ? `${cds[p.id].j}/${cds[p.id].r}` : "—"}</td><td class="num hide-m">${pr.total ? Math.round((pr.by[p.id] || 0) / pr.total * 100) + "%" : "—"}</td>${actions("players", p.id)}</tr>`).join("")}
   </tbody></table>` : empty(S.players.length ? "Aucun joueur ne correspond" : "Aucun joueur pour l'instant. Ajoutez votre effectif.", "users")}</div>`;
 }
 
@@ -1063,9 +1130,10 @@ const pitchLines = `<div class="ln half"></div><div class="ln circ"></div><div c
 function pitchHTML(c) {
   const f = FORMATIONS[c.formation] || FORMATIONS["4-4-2"];
   return `<div class="pitch">${pitchLines}${f.map(([lab, x, y], i) => { const t = (c.titulaires || []).find(s => s.slot === i); const p = t && pById(t.playerId);
-    return `<div class="tok ${p ? "" : "empty"}" style="left:${x}%;top:${y}%"><div class="bd">${p && p.photo ? `<img src="/media/${esc(p.photo)}" alt="">` : esc(p ? p.numero || lab : lab)}</div>${p && c.capitaine === p.id ? '<span class="cap">C</span>' : ""}<div class="nm">${p ? esc((p.prenom[0] || "") + ". " + p.nom) : lab}</div></div>`; }).join("")}</div>`;
+    const mk = p && c.marks && c.marks[p.id];
+    return `<div class="tok ${p ? "" : "empty"} ${mk && mk.r ? "off" : ""}" style="left:${x}%;top:${y}%">${mk && mk.in ? '<span class="sin" title="Entré en jeu">⬆</span>' : ""}${mk && (mk.j || mk.r) ? `<span class="mk">${mk.j && !mk.r ? '<i class="yc"></i>' : ""}${mk.r ? '<i class="rc"></i>' : ""}</span>` : ""}<div class="bd">${p && p.photo ? `<img src="/media/${esc(p.photo)}" alt="">` : esc(p ? p.numero || lab : lab)}</div>${p && c.capitaine === p.id ? '<span class="cap">C</span>' : ""}<div class="nm">${p ? esc((p.prenom[0] || "") + ". " + p.nom) : lab}</div></div>`; }).join("")}</div>`;
 }
-let CP = null;
+let CP = null; const cpM = () => (CP && S.matches.find(x => x.id === CP.matchId)) || {};
 function openCompo(matchId) {
   const m = S.matches.find(x => x.id === matchId); if (!m) return;
   const c = m.compo || {};
@@ -1082,14 +1150,14 @@ function compoRender() {
   const titulaires = Object.entries(CP.slots).filter(([, v]) => v).map(([s, v]) => ({ slot: +s, playerId: v }));
   CP.remplacants = CP.remplacants.filter(id => !used.has(id));
   if (CP.capitaine && !used.has(CP.capitaine)) CP.capitaine = "";
-  const pOpt = (sel, slotIdx) => `<option value="">—</option>` + ps.map(p => `<option value="${p.id}" ${p.id === sel ? "selected" : ""} ${used.has(p.id) && p.id !== sel ? "disabled" : ""}>${esc(p.numero ? p.numero + ". " : "")}${esc(p.prenom)} ${esc(p.nom)}${p.statut !== "Actif" ? " (" + esc(p.statut) + ")" : ""}</option>`).join("");
+  const pOpt = (sel, slotIdx) => `<option value="">—</option>` + ps.map(p => `<option value="${p.id}" ${p.id === sel ? "selected" : ""} ${used.has(p.id) && p.id !== sel ? "disabled" : ""}>${esc(p.numero ? p.numero + ". " : "")}${esc(p.prenom)} ${esc(p.nom)}${p.statut !== "Actif" ? " (" + esc(p.statut) + ")" : ""}${repOf(cpM(), p.id) === "non" ? " ❌ indisponible" : repOf(cpM(), p.id) === "oui" ? " ✅" : ""}</option>`).join("");
   $("#cpBody").innerHTML = `<div class="compo-grid"><div>${pitchHTML({ formation: CP.formation, titulaires, capitaine: CP.capitaine })}</div>
   <div><label class="flabel">Système de jeu<select class="input" onchange="CP.formation=this.value;compoRender()">${Object.keys(FORMATIONS).map(k => `<option ${k === CP.formation ? "selected" : ""}>${k}</option>`).join("")}</select></label>
   <div class="flabel" style="margin:12px 0 6px">Titulaires (${titulaires.length}/11)</div>
   ${f.map(([lab], i) => `<div class="slot-row"><b>${lab}</b><select class="input" onchange="CP.slots[${i}]=this.value;compoRender()">${pOpt(CP.slots[i] || "", i)}</select></div>`).join("")}
   <label class="flabel" style="margin-top:10px">Capitaine<select class="input" onchange="CP.capitaine=this.value;compoRender()"><option value="">—</option>${titulaires.map(t => `<option value="${t.playerId}" ${t.playerId === CP.capitaine ? "selected" : ""}>${esc(pName(t.playerId))}</option>`).join("")}</select></label>
   <div class="flabel" style="margin:12px 0 6px">Remplaçants</div>
-  <div class="checks" style="max-height:180px">${ps.filter(p => !used.has(p.id)).map(p => `<label><input type="checkbox" ${CP.remplacants.includes(p.id) ? "checked" : ""} onchange="CP.remplacants=this.checked?[...CP.remplacants,'${p.id}']:CP.remplacants.filter(x=>x!=='${p.id}')"> ${esc(p.prenom)} ${esc(p.nom)}</label>`).join("") || `<span class="muted">Tous les joueurs sont titulaires.</span>`}</div>
+  <div class="checks" style="max-height:180px">${ps.filter(p => !used.has(p.id)).map(p => `<label><input type="checkbox" ${CP.remplacants.includes(p.id) ? "checked" : ""} onchange="CP.remplacants=this.checked?[...CP.remplacants,'${p.id}']:CP.remplacants.filter(x=>x!=='${p.id}')"> ${esc(p.prenom)} ${esc(p.nom)}${repOf(cpM(), p.id) === "non" ? " ❌" : repOf(cpM(), p.id) === "oui" ? " ✅" : ""}</label>`).join("") || `<span class="muted">Tous les joueurs sont titulaires.</span>`}</div>
   <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-weight:500"><input type="checkbox" style="width:auto" ${CP.public ? "checked" : ""} onchange="CP.public=this.checked"> Visible par les joueurs et les fans</label>
   <small class="muted">Décochez pour préparer la composition sans la dévoiler avant le match.</small></div></div>`;
 }
@@ -1112,10 +1180,12 @@ function openMatch(id) {
   $("#modal").innerHTML = `<header><h2>Fiche du match</h2><button class="icon-btn" onclick="closeModal()">${I.x}</button></header><div class="body" style="display:block">
   <div class="match-head"><div class="tm">${L}</div><div><div class="sc">${p || isLive(m) ? `${+sl || 0} - ${+sr || 0}` : "VS"}</div>${p ? `<span class="res ${result(m)}" style="margin-top:6px">${result(m)}</span>` : `<div style="margin-top:6px">${statusTag(m)}</div>`}</div><div class="tm">${R}</div></div>
   <p class="muted" style="text-align:center;margin:8px 0 14px">${esc(m.competition || "Match")} · ${fmtDay(m.date)}${m.heure ? " · " + esc(m.heure) : ""}${m.stade ? " · " + esc(m.stade) : ""}</p>
-  ${p || isLive(m) ? `<h3 style="font-size:20px;margin:0 0 6px">Buts de ${nom}</h3>${goals.length ? goals.map(g => `<div class="goal-line"><span class="mn">${g.minute ? esc(g.minute) + "'" : "⚽"}</span><div><b>${g.playerId === "csc" ? "But contre son camp" : esc(pName(g.playerId))}</b>${g.passeurId ? `<br><small class="muted">🅰 Passe décisive : ${esc(pName(g.passeurId))}</small>` : ""}</div></div>`).join("") : `<p class="muted">${+m.butsPour ? "Buteurs non renseignés." : "Aucun but marqué."}</p>`}` : ""}
+  ${p || isLive(m) ? `<h3 style="font-size:20px;margin:0 0 6px">Déroulé du match</h3>${timelineHTML(m, false) || `<p class="muted">${+m.butsPour ? "Buteurs non renseignés." : "Aucun but marqué."}</p>`}` : ""}
   <h3 style="font-size:20px;margin:18px 0 8px;display:flex;justify-content:space-between;align-items:center">Composition ${showCompo ? `<span class="tag t-pri">${esc(c.formation)}</span>` : ""}</h3>
-  ${showCompo ? `${c.public === false ? `<p class="banner" style="margin-bottom:10px">Composition cachée : seuls les dirigeants la voient.</p>` : ""}${pitchHTML(c)}
+  ${showCompo ? `${c.public === false ? `<p class="banner" style="margin-bottom:10px">Composition cachée : seuls les dirigeants la voient.</p>` : ""}${matchEvents(m).length ? `<p class="muted" style="margin:0 0 8px;font-size:13px">${p ? "Composition en fin de match" : "Composition actuelle"} (après les changements) · ⬆ entré en jeu</p>` : ""}${pitchHTML(lineupNow(m) || c)}
     ${(c.remplacants || []).length ? `<div style="margin-top:12px"><b>Remplaçants :</b> ${c.remplacants.filter(pById).map(id => esc(pName(id))).join(", ")}</div>` : ""}` : `<p class="muted">La composition n'a pas encore été publiée.</p>`}
+  ${p && showCompo && minutesIn(m) ? (() => { const mi = minutesIn(m); const rows = Object.entries(mi).filter(([id]) => pById(id)).sort((a, b) => b[1] - a[1]); return `<h3 style="font-size:20px;margin:18px 0 8px">Temps de jeu <small class="muted" style="font-family:Inter;font-size:13px">(match de ${matchDur(m)} min)</small></h3><div class="wrap"><table class="tbl mins"><tbody>${rows.map(([id, n]) => `<tr><td>${esc(pName(id))}</td><td class="num"><b>${n}'</b></td><td style="width:45%"><div class="bar"><i style="width:${Math.round(n / matchDur(m) * 100)}%"></i></div></td></tr>`).join("")}</tbody></table></div>`; })() : ""}
+  ${staff && (m.convoques || []).length && !p ? (() => { const cv = m.convoques.filter(pById); const n = r => cv.filter(id => repOf(m, id) === r).length; return `<h3 style="font-size:20px;margin:18px 0 8px">Convocations <small class="muted" style="font-family:Inter;font-size:13px">${n("oui")} ✅ · ${n("non")} ❌ · ${cv.length - n("oui") - n("non")} ⏳</small></h3><div class="list">${cv.map(id => { const rr = (m.reponses || {})[id]; return `<div class="li"><div><b>${esc(pName(id))}</b>${rr && rr.motif ? `<br><small class="muted">« ${esc(rr.motif)} »</small>` : ""}</div>${repTag(m, id)}</div>`; }).join("")}</div>`; })() : ""}
   </div><footer>${staff && isLive(m) ? `<button class="btn danger" onclick="openLive('${m.id}')">● Score en direct</button>` : ""}${staff ? `<button class="btn ghost" onclick="openCompo('${m.id}')">${I.shirt.replace("<svg", '<svg width="15" height="15"')} Composition</button><button class="btn ghost" onclick="openForm('matches','${m.id}')">Modifier le match</button>` : ""}<button class="btn" onclick="closeModal()">Fermer</button></footer>`;
   $("#ov").classList.add("open");
 }
@@ -1510,34 +1580,83 @@ async function animDeliver() {
 /* ================= Score en direct ================= */
 let LV = null;
 function openLive(id) {
-  const m = S.matches.find(x => x.id === id); if (!m) return; LV = { id, adding: false };
+  const m = S.matches.find(x => x.id === id); if (!m) return; LV = { id, mode: null };
   $("#modal").classList.add("wide"); liveRender(); $("#ov").classList.add("open");
+}
+/** Fil du match : buts AFM + remplacements + cartons, triés par minute */
+function timelineHTML(m, editable) {
+  const nom = esc(S.settings.nom || "AFM");
+  const items = [...matchGoals(m).map((g, i) => ({ ...g, type: "but", gi: i })), ...matchEvents(m)].sort(byMin);
+  if (!items.length) return "";
+  return items.map(e => {
+    const mn = `<span class="mn">${e.minute ? esc(e.minute) + "'" : "–"}</span>`;
+    const del = editable && e.type !== "but" ? `<button class="icon-btn del" title="Supprimer" onclick="liveDelEvent('${e.id}')">${I.trash}</button>` : "";
+    if (e.type === "but") return `<div class="goal-line">${mn}<span class="ev-ico">⚽</span><div><b>${e.playerId === "csc" ? "But contre son camp" : esc(pName(e.playerId))}</b>${e.passeurId ? `<br><small class="muted">🅰 Passe décisive : ${esc(pName(e.passeurId))}</small>` : ""}</div></div>`;
+    if (e.type === "sub") return `<div class="goal-line">${mn}<span class="ev-ico">🔁</span><div><b style="color:#2e7d32">⬆ ${esc(pName(e.in))}</b><br><small class="muted">⬇ ${esc(pName(e.out))}</small></div>${del}</div>`;
+    if (e.type === "jaune") return `<div class="goal-line">${mn}<span class="ev-ico">🟨</span><div><b>${esc(pName(e.playerId))}</b><br><small class="muted">Carton jaune</small></div>${del}</div>`;
+    return `<div class="goal-line">${mn}<span class="ev-ico">🟥</span><div><b>${esc(pName(e.playerId))}</b><br><small class="muted">Carton rouge${e.auto ? " (2e jaune)" : ""}</small></div>${del}</div>`;
+  }).join("");
 }
 function liveRender() {
   const m = S.matches.find(x => x.id === LV.id); if (!m) return closeModal();
-  const nom = esc(S.settings.nom || "AFM"), goals = matchGoals(m), min = (liveMinute(m).match(/\d+/) || [""])[0];
+  const nom = esc(S.settings.nom || "AFM"), min = (liveMinute(m).match(/\d+/) || [""])[0];
   const ps = [...S.players].filter(p => p.statut !== "Inactif").sort((a, b) => a.nom.localeCompare(b.nom));
-  const cp = m.compo && (m.compo.titulaires || []).length ? new Set([...m.compo.titulaires.map(t => t.playerId), ...(m.compo.remplacants || [])]) : null;
-  const plist = cp ? ps.filter(p => cp.has(p.id)) : ps;
-  $("#modal").innerHTML = `<header><h2>Score en direct · ${esc(m.adversaire)}</h2><button class="icon-btn" onclick="closeModal()">${I.x}</button></header><div class="body" style="display:block">
+  const lu = lineupNow(m);
+  const sq = lu ? new Set([...lu.titulaires.map(t => t.playerId), ...lu.remplacants, ...lu.sortis.map(x => x.id)]) : null;
+  const plist = sq ? ps.filter(p => sq.has(p.id)) : ps;
+  const reds = new Set(matchEvents(m).filter(e => e.type === "rouge").map(e => e.playerId));
+  const onField = lu ? ps.filter(p => lu.titulaires.some(t => t.playerId === p.id) && !reds.has(p.id)) : ps;
+  const bench = lu ? ps.filter(p => lu.remplacants.includes(p.id)) : ps;
+  const pOpt = (list, ph) => `<option value="">— ${ph} —</option>` + list.map(p => `<option value="${p.id}">${p.numero ? esc(p.numero) + ". " : ""}${esc(p.prenom)} ${esc(p.nom)}</option>`).join("");
+  const minIn = `<input class="input" id="lvM" type="number" min="1" max="130" value="${esc(min)}" placeholder="min" style="max-width:90px">`;
+  const box = (title, inner, btn) => `<div class="card" style="margin-top:12px"><h3>${title}</h3><div style="display:flex;gap:8px;flex-wrap:wrap">${inner}</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="btn ghost sm" onclick="LV.mode=null;liveRender()">Annuler</button>${btn}</div></div>`;
+  let form = "";
+  if (LV.mode === "but") form = box(`But de ${nom}`, `<select class="input" id="lvP" style="flex:1;min-width:150px">${pOpt(plist, "Buteur")}<option value="csc">But contre son camp</option></select><select class="input" id="lvA" style="flex:1;min-width:150px"><option value="">— Sans passe —</option>${plist.map(p => `<option value="${p.id}">🅰 ${esc(p.prenom)} ${esc(p.nom)}</option>`).join("")}</select>${minIn}`, `<button class="btn ok sm" onclick="liveGoal('pour')">Valider le but</button>`);
+  if (LV.mode === "sub") form = box("🔁 Remplacement", `<select class="input" id="lvOut" style="flex:1;min-width:150px">${pOpt(onField, "⬇ Joueur qui sort")}</select><select class="input" id="lvIn" style="flex:1;min-width:150px">${pOpt(bench, "⬆ Joueur qui entre")}</select>${minIn}`, `<button class="btn ok sm" onclick="liveEvent('sub')">Valider le changement</button>`) +
+    (lu && !bench.length ? `<p class="muted" style="font-size:12.5px">Aucun remplaçant disponible : ajoutez des remplaçants dans la composition.</p>` : "");
+  if (LV.mode === "jaune" || LV.mode === "rouge") form = box(LV.mode === "jaune" ? "🟨 Carton jaune" : "🟥 Carton rouge", `<select class="input" id="lvC" style="flex:1;min-width:180px">${pOpt(lu ? ps.filter(p => sq.has(p.id) && !reds.has(p.id)) : ps, "Joueur")}</select>${minIn}`, `<button class="btn ${LV.mode === "jaune" ? "yel" : "red2"} sm" onclick="liveEvent('${LV.mode}')">Valider le carton</button>`);
+  $("#modal").innerHTML = `<header><h2>Match en direct · ${esc(m.adversaire)}</h2><button class="icon-btn" onclick="closeModal()">${I.x}</button></header><div class="body" style="display:block">
   <div class="match-head"><div class="tm">${nom}</div><div><div class="sc">${+m.butsPour || 0} - ${+m.butsContre || 0}</div><div style="margin-top:6px">${statusTag(m)}</div></div><div class="tm">${esc(m.adversaire)}</div></div>
-  <div class="live-btns"><div><button class="btn ok" onclick="LV.adding=true;liveRender()">⚽ But ${nom}</button><button class="btn ghost sm" onclick="liveUndo('pour')" ${+m.butsPour ? "" : "disabled"}>Annuler le dernier</button></div>
+  <div class="live-btns"><div><button class="btn ok" onclick="LV.mode='but';liveRender()">⚽ But ${nom}</button><button class="btn ghost sm" onclick="liveUndo('pour')" ${+m.butsPour ? "" : "disabled"}>Annuler le dernier</button></div>
   <div><button class="btn danger" onclick="liveGoal('contre')">⚽ But ${esc(m.adversaire)}</button><button class="btn ghost sm" onclick="liveUndo('contre')" ${+m.butsContre ? "" : "disabled"}>Annuler le dernier</button></div></div>
-  ${LV.adding ? `<div class="card" style="margin-top:12px"><h3>But de ${nom}</h3><div style="display:grid;grid-template-columns:1fr 1fr 90px;gap:8px">
-    <select class="input" id="lvP"><option value="">— Buteur —</option>${plist.map(p => `<option value="${p.id}">${esc(p.prenom)} ${esc(p.nom)}</option>`).join("")}<option value="csc">But contre son camp</option></select>
-    <select class="input" id="lvA"><option value="">— Sans passe —</option>${plist.map(p => `<option value="${p.id}">🅰 ${esc(p.prenom)} ${esc(p.nom)}</option>`).join("")}</select>
-    <input class="input" id="lvM" type="number" min="1" max="130" value="${esc(min)}" placeholder="min"></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="btn ghost sm" onclick="LV.adding=false;liveRender()">Annuler</button><button class="btn ok sm" onclick="liveGoal('pour')">Valider le but</button></div></div>` : ""}
-  ${goals.length ? `<div style="margin-top:12px">${goals.map(g => `<div class="goal-line"><span class="mn">${g.minute ? esc(g.minute) + "'" : "⚽"}</span><div><b>${g.playerId === "csc" ? "But contre son camp" : esc(pName(g.playerId))}</b>${g.passeurId ? `<br><small class="muted">🅰 ${esc(pName(g.passeurId))}</small>` : ""}</div></div>`).join("")}</div>` : ""}
-  <p class="muted" style="font-size:12.5px;margin-top:12px">Chaque but est visible immédiatement par les joueurs et les fans, et envoyé en notification sur leur téléphone. Le match passe automatiquement en « Terminé » ${MATCH_WINDOW} minutes après le coup d'envoi.</p>
+  <div class="live-acts"><button class="btn ghost" onclick="LV.mode='sub';liveRender()">🔁 Remplacement</button><button class="btn yel" onclick="LV.mode='jaune';liveRender()">🟨 Jaune</button><button class="btn red2" onclick="LV.mode='rouge';liveRender()">🟥 Rouge</button></div>
+  ${!lu ? `<p class="banner" style="margin-top:10px">Astuce : enregistrez la <b>composition</b> (titulaires et remplaçants) pour suivre les changements sur le terrain et calculer le temps de jeu.</p>` : ""}
+  ${form}
+  <div style="margin-top:12px">${timelineHTML(m, true)}</div>
+  ${lu ? `<h3 style="font-size:18px;margin:16px 0 8px">Sur le terrain</h3>${pitchHTML(lu)}${lu.remplacants.length ? `<p style="margin-top:8px"><b>Banc :</b> ${lu.remplacants.filter(pById).map(id => esc(pName(id))).join(", ")}</p>` : ""}` : ""}
+  <p class="muted" style="font-size:12.5px;margin-top:12px">Buts, remplacements et cartons rouges sont visibles immédiatement par les joueurs et les fans, et envoyés en notification. Le match passe automatiquement en « Terminé » ${MATCH_WINDOW} minutes après le coup d'envoi.</p>
   </div><footer><button class="btn ghost" onclick="liveEnd()">Siffler la fin du match</button><button class="btn" onclick="closeModal()">Fermer</button></footer>`;
+}
+function liveEvent(type) {
+  const m0 = S.matches.find(x => x.id === LV.id); if (!m0) return; const m = { ...m0, events: [...matchEvents(m0)] };
+  const minute = String(Math.max(1, Math.min(130, +$("#lvM").value || 0)) || "");
+  if (!minute) { toast("Indiquez la minute"); return; }
+  if (type === "sub") {
+    const out = $("#lvOut").value, inn = $("#lvIn").value;
+    if (!out || !inn) { toast("Choisissez le joueur qui sort et celui qui entre"); return; }
+    if (out === inn) { toast("Choisissez deux joueurs différents"); return; }
+    m.events.push({ id: uid(), type: "sub", minute, out, in: inn });
+  } else {
+    const pid = $("#lvC").value; if (!pid) { toast("Choisissez le joueur"); return; }
+    m.events.push({ id: uid(), type, minute, playerId: pid });
+    if (type === "jaune" && m.events.filter(e => e.type === "jaune" && e.playerId === pid).length === 2) { m.events.push({ id: uid(), type: "rouge", minute, playerId: pid, auto: true }); toast("2e carton jaune : carton rouge ajouté"); }
+  }
+  LV.mode = null; liveSave(m); if (type === "sub") toast("Changement enregistré"); else if (type === "rouge") toast("Carton rouge enregistré"); else toast("Carton jaune enregistré");
+}
+function liveDelEvent(id) {
+  const m0 = S.matches.find(x => x.id === LV.id); if (!m0) return;
+  const ev = matchEvents(m0).find(e => e.id === id); if (!ev) return;
+  let events = matchEvents(m0).filter(e => e.id !== id);
+  if (ev.type === "jaune") events = events.filter(e => !(e.auto && e.type === "rouge" && e.playerId === ev.playerId));
+  liveSave({ ...m0, events }); toast("Événement supprimé");
 }
 function liveSave(m) { const agg = k => { const c = {}; (m.buts || []).forEach(g => { if (g[k] && g[k] !== "csc") c[g[k]] = (c[g[k]] || 0) + 1; }); return c; };
   m.buteurs = Object.entries(agg("playerId")).map(([playerId, buts]) => ({ playerId, buts })); m.passeurs = Object.entries(agg("passeurId")).map(([playerId, passes]) => ({ playerId, passes }));
   m.updatedAt = nowIso(); saveItem("matches", m); liveRender(); }
 function liveGoal(side) {
   const m0 = S.matches.find(x => x.id === LV.id); if (!m0) return; const m = { ...m0, buts: [...matchGoals(m0)] };
-  if (side === "pour") { const p = $("#lvP").value; if (!p) { toast("Choisissez le buteur"); return; } const a = $("#lvA").value; m.buts.push({ playerId: p, passeurId: a && a !== p ? a : "", minute: $("#lvM").value || "" }); m.butsPour = String((+m0.butsPour || 0) + 1); if (m.butsContre === "" || m.butsContre == null) m.butsContre = "0"; LV.adding = false; }
+  if (side === "pour") { const p = $("#lvP").value; if (!p) { toast("Choisissez le buteur"); return; } const a = $("#lvA").value; m.buts.push({ playerId: p, passeurId: a && a !== p ? a : "", minute: $("#lvM").value || "" }); m.butsPour = String((+m0.butsPour || 0) + 1); if (m.butsContre === "" || m.butsContre == null) m.butsContre = "0"; LV.mode = null; }
   else { m.butsContre = String((+m0.butsContre || 0) + 1); if (m.butsPour === "" || m.butsPour == null) m.butsPour = "0"; }
   liveSave(m); toast("But enregistré");
 }
@@ -1805,7 +1924,9 @@ function openForm(col, id) {
     body = field("Prénom *", inp("prenom", p.prenom, "text", "required")) + field("Nom *", inp("nom", p.nom, "text", "required")) +
       field("Numéro de maillot", inp("numero", p.numero, "number", 'min="1" max="99"')) + field("Poste", `<select class="input" name="poste">${opt(POSTES, p.poste)}</select>`) +
       field("Date de naissance", inp("naissance", p.naissance, "date")) + field("Téléphone", inp("telephone", p.telephone, "tel")) +
-      field("Statut", `<select class="input" name="statut">${opt(STATUTS, p.statut)}</select>`) + field("Cotisation", `<select class="input" name="cotisation">${opt(["À jour", "En retard", "Exonéré"], p.cotisation)}</select>`) +
+      field("Statut", `<select class="input" name="statut" onchange="document.getElementById('injBox').style.display=(this.value==='Blessé'||this.value==='Suspendu')?'contents':'none'">${opt(STATUTS, p.statut)}</select>`) + field("Cotisation", `<select class="input" name="cotisation">${opt(["À jour", "En retard", "Exonéré"], p.cotisation)}</select>`) +
+      `<div id="injBox" style="display:${p.statut === "Blessé" || p.statut === "Suspendu" ? "contents" : "none"}">` + field("Blessure / motif de l'indisponibilité", inp("blessure", p.blessure, "text", 'placeholder="Ex. entorse cheville droite, suspension 2 matchs"')) + field("Retour prévu le", inp("retourPrevu", p.retourPrevu, "date")) +
+      `<p class="full muted" style="margin:0;font-size:12.5px">🔒 Ces informations médicales ne sont visibles que par le staff et le joueur concerné.</p></div>` +
       field("Notes", `<textarea class="input" name="notes" rows="2">${esc(p.notes || "")}</textarea>`, true) +
       photoField(p.photo, 700);
   }
@@ -1815,10 +1936,10 @@ function openForm(col, id) {
     body = field("Adversaire *", inp("adversaire", m.adversaire, "text", "required"), true) +
       field("Date *", inp("date", m.date, "date", "required")) + field("Heure", inp("heure", m.heure, "time")) +
       field("Lieu", `<select class="input" name="lieu">${opt(["Domicile", "Extérieur", "Neutre"], m.lieu)}</select>`) + field("Compétition", `<select class="input" name="competition">${opt(["Championnat", "Coupe", "Amical", "Tournoi"], m.competition)}</select>`) +
-      field("Stade", inp("stade", m.stade)) + field("Statut", `<select class="input" name="statut"><option value="">Automatique (selon la date et l'heure)</option>${["Reporté", "Annulé"].map(x => `<option ${m.statut === x ? "selected" : ""}>${x}</option>`).join("")}</select>`) +
+      field("Stade", inp("stade", m.stade)) + field("Durée du match (min)", inp("duree", m.duree || 90, "number", 'min="20" max="130" title="90 pour les seniors, moins pour les jeunes catégories"')) + field("Statut", `<select class="input" name="statut"><option value="">Automatique (selon la date et l'heure)</option>${["Reporté", "Annulé"].map(x => `<option ${m.statut === x ? "selected" : ""}>${x}</option>`).join("")}</select>`) +
       field(`Buts ${esc(S.settings.nom || "AFM")}`, inp("butsPour", m.butsPour, "number", 'min="0" placeholder="Vide si non joué"')) + field("Buts adversaire", inp("butsContre", m.butsContre, "number", 'min="0"')) +
       `<div class="full"><div class="flabel" style="margin-bottom:6px">Buts de ${esc(S.settings.nom || "AFM")} : buteur, passeur décisif, minute</div><div id="scorers">${matchGoals(m).map(g => goalRow(g)).join("")}</div><button type="button" class="btn ghost sm" onclick="addScorer()">${I.plus} Ajouter un but</button></div>` +
-      `<div class="full"><div class="flabel" style="margin-bottom:6px">Joueurs convoqués / ayant joué</div>${playerChecks("convoques", m.convoques || [])}</div>`;
+      `<div class="full"><div class="flabel" style="margin-bottom:6px">Joueurs convoqués</div>${playerChecks("convoques", m.convoques || [])}<small class="muted">Chaque joueur convoqué reçoit une notification et peut confirmer sa présence depuis son espace. Les joueurs de la composition sont convoqués automatiquement.</small></div>`;
   }
   if (col === "trainings") {
     const t = it || { date: today(), heure: "17:00", lieu: S.settings.stade, type: "Entraînement" };
