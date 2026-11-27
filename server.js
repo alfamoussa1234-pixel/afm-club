@@ -292,11 +292,11 @@ async function stateFor(user) {
   const annonces = await store.all("annonces");
 
   if (user.role === "fan") {
-    out.matches = out.matches.map(({ convoques, ...m }) => (m.compo && m.compo.public === false ? { ...m, compo: null } : m));
+    out.matches = out.matches.map(({ convoques, reponses, ...m }) => (m.compo && m.compo.public === false ? { ...m, compo: null } : m));
     out.suggestions = (await store.all("suggestions")).filter(s => s.userId === user.id).map(s => ({ id: s.id, categorie: s.categorie, texte: s.texte, date: s.date }));
     out.fils = [];
     out.annonces = annonces.filter(a => a.public === true);
-    out.players = out.players.filter(p => p.statut !== "Inactif").map(p => (({ telephone, notes, naissance, cotisation, statut, ...rest }) => rest)(p));
+    out.players = out.players.filter(p => p.statut !== "Inactif").map(p => (({ telephone, notes, naissance, cotisation, statut, blessure, retourPrevu, ...rest }) => rest)(p));
     out.trainings = []; out.decisions = []; out.comptes = [];
     return out;
   }
@@ -325,7 +325,8 @@ async function stateFor(user) {
   }
   // joueur
   out.suggestions = [];
-  out.matches = out.matches.map(m => (m.compo && m.compo.public === false ? { ...m, compo: null } : m));
+  out.matches = out.matches.map(m => { const r = m.reponses && m.reponses[user.playerId]; const o = { ...m, reponses: r ? { [user.playerId]: r } : {} }; if (m.compo && m.compo.public === false) o.compo = null; return o; });
+  out.players = out.players.map(p => p.id === user.playerId ? p : (({ blessure, retourPrevu, notes, ...rest }) => rest)(p));
   out.trainings = out.trainings.map(({ pointage, ...t }) => ({ ...t, pointe: !!((pointage && Object.keys(pointage).length) || (t.presents || []).length), pointage: pointage && pointage[user.playerId] ? { [user.playerId]: pointage[user.playerId] } : {}, presents: (t.presents || []).filter(id => id === user.playerId), seance: t.seance && t.seance.visibleJoueurs !== false ? t.seance : null }));
   const monFil = await store.get("fils", user.id);
   out.fils = monFil ? [monFil] : [];
@@ -459,6 +460,13 @@ async function serveMedia(req, res, id) {
 
 async function pushHooks(col, old, d, user) {
   const s = (await store.get("settings", "club")) || {}; const nom = s.nom || "AFM";
+  if (col === "matches" && d.date && d.date >= new Date(Date.now() - 864e5).toISOString().slice(0, 10) && !["Reporté", "Annulé"].includes(d.statut)) {
+    const before = new Set((old && old.convoques) || []); const nouveaux = (d.convoques || []).filter(pid => !before.has(pid));
+    if (nouveaux.length) {
+      const ids = await usersWhere(u => u.role === "joueur" && nouveaux.includes(u.playerId));
+      notify(ids, { title: `📋 Convocation : ${nom} – ${d.adversaire}`, body: `${d.date}${d.heure ? " à " + d.heure : ""}${d.stade ? " · " + d.stade : ""}. Confirmez votre présence dans l'application.`, url: "/#accueil", tag: "convoc-" + d.id });
+    }
+  }
   if (col === "annonces" && !old) {
     const ids = await usersWhere(u => u.id !== user.id && (d.public === true || u.role !== "fan"));
     notify(ids, { title: `${d.priorite === "Urgent" ? "🚨" : "📢"} ${d.titre || "Nouvelle annonce"}`, body: String(d.message || "").slice(0, 140), url: "/#annonces" });
@@ -473,6 +481,14 @@ async function pushHooks(col, old, d, user) {
       const g = (d.buts || [])[(d.buts || []).length - 1];
       const p = pour > oPour && g && g.playerId && g.playerId !== "csc" ? await store.get("players", g.playerId) : null;
       notify(await usersWhere(() => true), { title: pour > oPour ? `⚽ BUUUT ${nom} ! ${pour} - ${contre}` : `⚽ But de ${d.adversaire} : ${nom} ${pour} - ${contre}`, body: pour > oPour ? (p ? `${p.prenom} ${p.nom}${g.minute ? " (" + g.minute + "')" : ""}` : "Allez l'AFM !") : "Courage les gars !", url: "/#calendrier", tag: "match-" + d.id });
+    }
+    const ev = d.events || [], oev = old.events || [];
+    if (live && ev.length > oev.length) {
+      const known = new Set(oev.map(e => e.id)); const pn = async id => { const p = id && await store.get("players", id); return p ? p.prenom + " " + p.nom : "?"; };
+      for (const e of ev.filter(x => !known.has(x.id))) {
+        if (e.type === "sub") notify(await usersWhere(() => true), { title: `🔁 Changement ${nom}${e.minute ? " (" + e.minute + "')" : ""}`, body: `⬆ ${await pn(e.in)}  ⬇ ${await pn(e.out)}`, url: "/#calendrier", tag: "match-" + d.id + "-ev" });
+        if (e.type === "rouge") notify(await usersWhere(() => true), { title: `🟥 Carton rouge${e.minute ? " (" + e.minute + "')" : ""}`, body: `${await pn(e.playerId)}${e.auto ? " (2e jaune)" : ""}`, url: "/#calendrier", tag: "match-" + d.id + "-ev" });
+      }
     }
     if (d.fin && !old.fin) {
       const flags = (await store.get("config", "pushflags")) || {}; flags["f:" + d.id] = 1; await store.put("config", "pushflags", flags);
@@ -613,6 +629,29 @@ async function api(req, res, pathname) {
   if (m === "DELETE" && seg[0] === "mon-compte" && user.role === "fan") {
     await store.del("users", user.id);
     return send(res, 200, { ok: true }, { "Set-Cookie": sessionCookie(req, "", 0) });
+  }
+
+  // Convocation : le joueur confirme sa présence ou signale qu'il est indisponible
+  if (m === "POST" && seg[0] === "convocation" && validId(seg[1])) {
+    if (user.role !== "joueur" || !user.playerId) return fail(res, 400, "Réservé aux comptes joueurs");
+    const b = await readBody(req, 4e3);
+    const r = b.reponse === "oui" ? "oui" : b.reponse === "non" ? "non" : null;
+    if (!r) return fail(res, 400, "Réponse invalide");
+    let match = null;
+    const err = await withLock("matches:" + seg[1], async () => {
+      const mt = await store.get("matches", seg[1]);
+      if (!mt) return "Match introuvable";
+      if (!(mt.convoques || []).includes(user.playerId)) return "Vous n'êtes pas convoqué pour ce match";
+      const { id, ...body } = mt;
+      body.reponses = { ...(body.reponses || {}), [user.playerId]: { r, motif: String(b.motif || "").trim().slice(0, 200), date: new Date().toISOString() } };
+      await store.put("matches", seg[1], body); match = mt;
+    });
+    if (err) return fail(res, 400, err);
+    if (r === "non") {
+      const p = await store.get("players", user.playerId);
+      notify(await staffIds(), { title: `❌ ${p ? p.prenom + " " + p.nom : "Un joueur"} indisponible`, body: `${match.adversaire} (${match.date})${b.motif ? " : " + String(b.motif).slice(0, 100) : ""}`, url: "/#matchs" });
+    }
+    return send(res, 200, { ok: true });
   }
 
   if (m === "PUT" && seg[0] === "mes-demandes") {
@@ -798,7 +837,8 @@ N'invente aucune information (pas de prix, de sponsor ou de joueur non mentionn�
       if (!isObj(b)) return fail(res, 400, "Format invalide");
       const { id, ...data } = b;
       if (data.photo !== undefined && data.photo !== "" && !validId(data.photo)) return fail(res, 400, "Photo invalide");
-      await store.put(seg[1], seg[2], data);
+      if (seg[1] === "matches") await withLock("matches:" + seg[2], async () => { const cur = await store.get("matches", seg[2]); if (cur && cur.reponses) data.reponses = cur.reponses; else delete data.reponses; await store.put("matches", seg[2], data); });
+      else await store.put(seg[1], seg[2], data);
       pushHooks(seg[1], old, { ...data, id: seg[2] }, user).catch(e => console.error("Push :", e.message));
       if (old && old.photo && old.photo !== data.photo) await store.delMedia(old.photo).catch(() => {});
       return send(res, 200, { ok: true });
